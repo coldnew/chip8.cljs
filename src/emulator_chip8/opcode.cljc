@@ -63,17 +63,66 @@
   "Skip the following instruction if the value of register VX is equal to the value of register VY"
   [])
 
-;;;;;;;;;;;
-
 (defop :6XNN
-  []
-  ;;(println "ad")
-  )
+  "Store number NN in register VX."
+  [])
+
+(defop :7XNN
+  "Add the value NN to register VX."
+  [])
+
+(defop :8XY0
+  "Store the value of register VY in register VX"
+  [])
+
+(defop :8XY1
+  "Set VX to VX OR VY"
+  [])
+
+(defop :8XY2
+  "Set VX to VX AND VY"
+  [])
 
 (defop :8XY3
-  []
-  ;;(println "ad")
-  )
+  "Set VX to VX XOR VY"
+  [])
+
+(defop :8XY4
+  "Add the value of register VY to register VX.
+  Set VF to 1 if a carry occurs
+  Set VF to 0 if a carry does not occur."
+  [])
+
+(defop :8XY5
+  "Subtract the value of register VY from register VX
+  Set VF to 0 if a borrow occurs
+  Set VF to 1 if a borrow does not occur."
+  [])
+
+(defop :8XY6
+  "Store the value of register VY shifted right one bit in register VX.
+  Set register VF to the least significant bit prior to the shift."
+  [])
+
+(defop :8XY7
+  "Set register VX to the value of VY minus VX
+  Set VF to 00 if a borrow occurs
+  Set VF to 01 if a borrow does not occur"
+  [])
+
+(defop :8XYE
+  "Store the value of register VY shifted left one bit in register VX.
+Set register VF to the most significant bit prior to the shift."
+  [])
+
+(defop :9XY0
+  "Skip the following instruction if the value of register VX is not equal to
+  the value of register VY."
+  [])
+
+
+
+;;;;;;
 
 
 (deref opcode-table)
