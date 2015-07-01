@@ -1,5 +1,5 @@
 (ns emulator-chip8.opcode
-;;  #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop to-opcode-func]]))
+  ;;  #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop to-opcode-func]]))
   )
 
 ;; #?(:clj
@@ -16,6 +16,35 @@
 ;;      (let [n  (symbol (str name))]
 ;;        `(~n)
 ;;        )))
+
+(def opcode-table (atom #{}))
+
+(defmacro defop
+  [opcode args & body]
+  (let [key (keyword (name opcode))
+        pname (symbol (str "opcode-" (name opcode)))
+        ]
+    `(defn ~pname [~@args] ~@body)
+    (swap! opcode-table conj key)
+    ))
+
+(defop :6XNN
+  []
+  ;;(println "ad")
+  )
+
+(defop :8XY3
+  []
+  ;;(println "ad")
+  )
+
+
+(deref opcode-table)
+(reset! opcode-table #{})
+
+(swap! opcode-table conj (keyword (name :aaa)))
+
+(swap! opcode-table conj :as)
 
 (defn make-opcode-match-list
   [opcode]
@@ -166,14 +195,14 @@
 
 (defn find-match-handler
   "Search for matching handler in handler list.
-If nothing find, return nil else return keyword."
+  If nothing find, return nil else return keyword."
   [handler opcode]
   (str "opcode-" (name (some (make-opcode-sets opcode) (keys handler))) )
   )
 
 (defn make-handler-args
   "Parse the code to find how many VX, VY, NNN, NN, N
-and create argument lists."
+  and create argument lists."
   [opcode]
   (let [code (format "%04X" opcode)]
     {:NNN (subs code 1 4)
@@ -194,7 +223,7 @@ and create argument lists."
 
 (defn find-match-handler
   "Search for matching handler in handler list.
-If nothing find, return nil else return keyword."
+  If nothing find, return nil else return keyword."
   [handler opcode]
   (some (make-opcode-sets opcode) (keys handler)))
 
