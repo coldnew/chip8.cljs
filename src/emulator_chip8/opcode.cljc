@@ -28,6 +28,43 @@
     (swap! opcode-table conj key)
     ))
 
+;; http://stackoverflow.com/questions/24897818/how-to-add-docstring-support-to-defn-like-clojure-macro
+
+(defop :0NNN
+  "Execute machine language subroutine at address NNN"
+  [])
+
+(defop :00E0
+  "Clear the screen"
+  [])
+
+(defop :00EE
+  "Return from a subroutine"
+  [])
+
+(defop :1NNN
+  "Jump to address NNN"
+  [])
+
+(defop :2NNN
+  "Execute subroutine starting at address NNN"
+  [])
+
+(defop :3XNN
+  "Skip the following instruction if the value of register VX equals NN"
+  [])
+
+(defop :4XNN
+  "Skip the following instruction if the value of register VX is not equal to
+  NN"
+  [])
+
+(defop :5XY0
+  "Skip the following instruction if the value of register VX is equal to the value of register VY"
+  [])
+
+;;;;;;;;;;;
+
 (defop :6XNN
   []
   ;;(println "ad")
@@ -65,10 +102,10 @@
 
 (def handler-list
   {;; Execute machine language subroutine at address NNN
-   :0NNN 'unimplement
+   ;;   :0NNN 'unimplement
 
    ;; Clear the screen
-   :00E0 'clear-screen
+   ;;   :00E0 'clear-screen
 
    ;; Return from a subroutine
    :00EE 'return-from-subroutine
