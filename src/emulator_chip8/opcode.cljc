@@ -1,5 +1,5 @@
 (ns emulator-chip8.opcode
-  #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop]])))
+  #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop to-opcode-func]])))
 
 #?(:clj
    (defmacro defop
@@ -10,9 +10,14 @@
                  ['n 'n-addr]]]
        `(defn ~name ~args ~@body))))
 
+#?(:clj
+   (defmacro to-opcode-func [name]
+     (let [n  (symbol (str name))]
+       `(~n)
+       )))
+
 ;; 0NNN
 (defop 0NNN
-
   )
 
 ;; 00E0
