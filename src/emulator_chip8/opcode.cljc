@@ -17,7 +17,7 @@
 ;;        `(~n)
 ;;        )))
 
-(def  ^:dynamic *opcode-list* (atom #{}))
+(defonce opcode-list (atom #{}))
 
 #?(:clj
    (defmacro defop
@@ -26,7 +26,7 @@
        `(do
           (defn ~pname ~args ~@body)
 
-          (swap! *opcode-list* conj ~opcode)))))
+          (swap! opcode-list conj ~opcode)))))
 
 ;; http://stackoverflow.com/questions/24897818/how-to-add-docstring-support-to-defn-like-clojure-macro
 
@@ -197,12 +197,12 @@
 
 ;;;;;;
 
-;;(deref *opcode-list*)
-;;(reset! *opcode-list* #{})
+;;(deref opcode-list)
+;;(reset! opcode-list #{})
 
-;; (swap! *opcode-list* conj (keyword (name :aaa)))
+;; (swap! opcode-list conj (keyword (name :aaa)))
 
-;; (swap! *opcode-list* conj :as)
+;; (swap! opcode-list conj :as)
 
 (comment
 
