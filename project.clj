@@ -5,11 +5,15 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
   :source-paths ["src"]
+  :test-paths ["spec"]
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "0.0-3308" :scope "provided"]]
 
-  :plugins [[lein-cljsbuild "1.0.6"]]
+  :profiles {:dev {:dependencies [[speclj "3.3.0"]]}}
+
+  :plugins [[lein-cljsbuild "1.0.6"]
+            [speclj "3.3.0"]]
 
   :min-lein-version "2.5.1"
 
