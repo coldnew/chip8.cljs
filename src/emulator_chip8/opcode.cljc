@@ -32,7 +32,7 @@
 
 (defop :0NNN
   "Execute machine language subroutine at address NNN"
-  [])
+  [state opcode])
 
 (defop :00E0
   "Clear the screen"
@@ -44,7 +44,8 @@
 
 (defop :1NNN
   "Jump to address NNN"
-  [])
+  [state opcode]
+  (merge state {:PC (:NNN opcode)}))
 
 (defop :2NNN
   "Execute subroutine starting at address NNN"

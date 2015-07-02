@@ -16,6 +16,11 @@
 (defn b []
   ((:a bb)))
 
+(defn init
+  "Initial chip8 system."
+  [])
+
+
 (defn -main [& args]
   ;; (let [arg1 (nth args 0)]
   ;;   (if arg1
