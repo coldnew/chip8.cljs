@@ -10,10 +10,10 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "0.0-3308" :scope "provided"]]
 
-  :profiles {:dev {:dependencies [[speclj "3.3.0"]]}}
+  :profiles {:dev {:dependencies [[speclj "3.3.1"]]}}
 
   :plugins [[lein-cljsbuild "1.0.6"]
-            [speclj "3.3.0"]]
+            [speclj "3.3.1"]]
 
   :min-lein-version "2.5.1"
 
