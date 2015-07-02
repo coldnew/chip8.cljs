@@ -49,11 +49,16 @@
 
 (defop :2NNN
   "Execute subroutine starting at address NNN"
-  [])
+  [state opcode]
+  )
 
 (defop :3XNN
   "Skip the following instruction if the value of register VX equals NN"
-  [])
+  [state opcode]
+  (if (= (nth (:VX state) (:VX opcode)) (:NN opcode))
+    ;; skip next
+    (println "TODO")
+    ))
 
 (defop :4XNN
   "Skip the following instruction if the value of register VX is not equal to
@@ -66,7 +71,8 @@
 
 (defop :6XNN
   "Store number NN in register VX."
-  [])
+  [state opcode]
+  (merge state {:VX (assoc (:VX state) (:VX opcode))}))
 
 (defop :7XNN
   "Add the value NN to register VX."
@@ -174,7 +180,7 @@
   hexadecimal digit stored in register VX."
   [])
 
-(defn :FX33
+(defop :FX33
   "Store the binary-coded decimal equivalent of the value stored in register VX
   at addresses I, I + 1, and I + 2."
   [])

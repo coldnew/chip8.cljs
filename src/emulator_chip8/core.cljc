@@ -2,7 +2,7 @@
   (:require #?(:cljs [cljs.nodejs :as nodejs])
             #?(:cljs [goog.crypt :as gcrypt])
             [clojure.string :as str]
-            [emulator-chip8.opcode :refer [*opcode-table*]])
+            [emulator-chip8.opcode :refer [*opcode-list*]])
   )
 
 ;; enable *print-fn* in clojurescript
@@ -27,7 +27,7 @@
   ;;     (println "TODO:")
   ;;     (println "Error: Please specify filename.")))
   (b)
-  (println (str "-->> " @*opcode-table*))
+  (println (str "-->> " @*opcode-list*))
   )
 
 ;; setup node.js starter point
