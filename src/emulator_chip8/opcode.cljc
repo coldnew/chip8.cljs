@@ -17,7 +17,7 @@
 ;;        `(~n)
 ;;        )))
 
-(def opcode-table (atom #{}))
+(def  ^:dynamic *opcode-list* (atom #{}))
 
 #?(:clj
    (defmacro defop
@@ -26,7 +26,7 @@
        `(do
           (defn ~pname ~args ~@body)
 
-          (swap! opcode-table conj ~opcode)))))
+          (swap! *opcode-list* conj ~opcode)))))
 
 ;; http://stackoverflow.com/questions/24897818/how-to-add-docstring-support-to-defn-like-clojure-macro
 
@@ -120,14 +120,82 @@
   the value of register VY."
   [])
 
+(defop :ANNN
+  "Store memory address NNN in register I"
+  [])
+
+(defop :BNNN
+  "Jump to address NNN + V0"
+  [])
+
+(defop :CXNN
+  "Set VX to a random number with a mask of NN"
+  [])
+
+(defop :DXYN
+  "Draw a sprite at position VX, VY with N bytes of sprite data starting at the
+  address stored in I. Set VF to 01 if any set pixels are changed to unset, and
+  00 otherwise"
+  [])
+
+(defop :EX9E
+  "Skip the following instruction if the key corresponding to the hex value
+  currently stored in register VX is pressed."
+  [])
+
+(defop :EXA1
+  "Skip the following instruction if the key corresponding to the hex value
+  currently stored in register VX is not pressed."
+  [])
+
+(defop :FX07
+  "Store the current value of the delay timer in register VX."
+  [])
+
+(defop :FX0A
+  "Wait for a keypress and store the result in register VX."
+  [])
+
+(defop :FX15
+  "Set the delay timer to the value of register VX."
+  [])
+
+(defop :FX18
+  "Set the sound timer to the value of register VX."
+  [])
+
+(defop :FX1E
+  "Add the value stored in register VX to register I."
+  [])
+
+(defop :FX29
+  "Set I to the memory address of the sprite data corresponding to the
+  hexadecimal digit stored in register VX."
+  [])
+
+(defn :FX33
+  "Store the binary-coded decimal equivalent of the value stored in register VX
+  at addresses I, I + 1, and I + 2."
+  [])
+
+(defop :FX55
+  "Store the values of registers V0 to VX inclusive in memory starting at
+  address I, I is set to I + X + 1 after operation."
+  [])
+
+(defop :FX65
+  "Fill registers V0 to VX inclusive with the values stored in memory starting
+  at address I, I is set to I + X + 1 after operation."
+  [])
+
 ;;;;;;
 
-;;(deref opcode-table)
-;;(reset! opcode-table #{})
+;;(deref *opcode-list*)
+;;(reset! *opcode-list* #{})
 
-;; (swap! opcode-table conj (keyword (name :aaa)))
+;; (swap! *opcode-list* conj (keyword (name :aaa)))
 
-;; (swap! opcode-table conj :as)
+;; (swap! *opcode-list* conj :as)
 
 (comment
 
@@ -150,132 +218,6 @@
 
   (def handler-list
     {;; Execute machine language subroutine at address NNN
-     ;;   :0NNN 'unimplement
-
-     ;; Clear the screen
-     ;;   :00E0 'clear-screen
-
-     ;; Return from a subroutine
-     :00EE 'return-from-subroutine
-
-     ;; Jump to address NNN
-     :1NNN 'jump-to-address
-
-     ;; Execute subroutine starting at address NNN
-     :2NNN 'call-subroutine
-
-     ;; Skip the following instruction if the value of register VX equals NN
-     :3XNN 'skip-when-VX-equal-NN
-
-     ;; Skip the following instruction if the value of register VX is
-     ;; not equal to NN
-     :4XNN 'skip-when-VX-not-equal-NN
-
-     ;; Skip the following instruction if the value of register VX is
-     ;; equal to the value of register VY
-     :5XY0 'skip-when-VX-equal-VY
-
-     ;; Store number NN in register VX
-     :6XNN 'store-NN-in-VX
-
-     ;; Add the value NN to register VX
-     :7XNN 'add-NN-to-VX
-
-     ;; Store the value of register VY in register VX
-     :8XY0 'store-VY-in-VX
-
-     ;; Set VX to VX OR VY
-     :8XY1 'set-VX-to-VX-or-VY
-
-     ;; Set VX to VX AND VY
-     :8XY2 'set-VX-to-VX-and-VY
-
-     ;; Set VX to VX XOR VY
-     :8XY3 'set-VX-to-VX-xor-VY
-
-     ;; Add the value of register VY to register VX
-     ;; Set VF to 1 if a carry occurs
-     ;; Set VF to 0 if a carry does not occur
-     :8XY4 'add-VY-to-VX
-
-     ;; Subtract the value of register VY from register VX
-     ;; Set VF to 0 if a borrow occurs
-     ;; Set VF to 1 if a borrow does not occur
-     :8XY5 'substract-VY-from-VX
-
-     ;; Store the value of register VY shifted right one bit in register VX
-     ;; Set register VF to the least significant bit prior to the
-     ;; shift
-     :8XY6 'unimplement
-
-     ;; Set register VX to the value of VY minus VX
-     ;; Set VF to 00 if a borrow occurs
-     ;; Set VF to 01 if a borrow does not occur
-     :8XY7 'unimplement
-
-     ;; Store the value of register VY shifted left one bit in register VX
-     ;; Set register VF to the most significant bit prior to the shift
-     :8XYE 'unimplement
-
-     ;; Skip the following instruction if the value of register VX is
-     ;; not equal to the value of register VY
-     :9XY0 'unimplement
-
-     ;; Store memory address NNN in register I
-     :ANNN 'store-NNN-in-I
-
-     ;; Jump to address NNN + V0
-     :BNNN 'unimplement
-
-     ;; Set VX to a random number with a mask of NN
-     :CXNN 'set-VX-random-mask-NN
-
-     ;; Draw a sprite at position VX, VY with N bytes of sprite data
-     ;; starting at the address stored in I
-     ;; Set VF to 01 if any set pixels are changed to unset, and 00
-     ;; otherwise
-     :DXYN 'unimplement
-
-     ;; Skip the following instruction if the key corresponding to
-     ;; the hex value currently stored in register VX is pressed
-     :EX9E 'unimplement
-
-     ;; Skip the following instruction if the key corresponding to the
-     ;; hex value currently stored in register VX is not pressed
-     :EXA1 'unimplement
-
-     ;; Store the current value of the delay timer in register VX
-     :FX07 'store-delay-timer-to-VX
-
-     ;; Wait for a keypress and store the result in register VX
-     :FX0A 'unimplement
-
-     ;; Set the delay timer to the value of register VX
-     :FX15 'store-VX-to-delay-timer
-
-     ;; Set the sound timer to the value of register VX
-     :FX18 'store-VX-to-sound-timer
-
-     ;; Add the value stored in register VX to register I
-     :FX1E 'unimplement
-
-     ;; Set I to the memory address of the sprite data corresponding
-     ;; to the hexadecimal digit stored in register VX
-     :FX29 'unimplement
-
-     ;; Store the binary-coded decimal equivalent of the value stored
-     ;; in register VX at addresses I, I + 1, and I + 2
-     :FX33 'unimplement
-
-     ;; Store the values of registers V0 to VX inclusive in memory
-     ;; starting at address I
-     ;; I is set to I + X + 1 after operation
-     :FX55 'unimplement
-
-     ;; Fill registers V0 to VX inclusive with the values stored in
-     ;; memory starting at address I
-     ;; I is set to I + X + 1 after operation
-     :FX65 'unimplement
      })
 
   (defn find-match-handler
