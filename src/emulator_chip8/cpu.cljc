@@ -80,11 +80,24 @@
         c (count memory)]
     (merge state {:memory (vec (take c (into fontset memory)))})))
 
+(defn load-rom
+  "Load ROM data to memory."
+  [state rom]
+  (let [memory (:memory state)
+        c (count memory)
+        rom1 (vec rom)
+        p (count rom1)]
+    (merge state
+           {:memory
+            (vec (take c (into (subvec memory 0 0x200) rom1)))})))
+
 (defn reset-cpu
   "Reset the full cpu state."
   []
   (-> (make-cpu)
-      load-fontset))
+      load-fontset)
+  ;; TODO: clear screen
+  )
 
 (defn step
   "Step through the cpu."
