@@ -6,6 +6,9 @@ lein: lein2
 jdk:
   - oraclejdk7
 
+notifications:
+  email: false
+
 script:
   - lein2 spec
   - lein2 cljsbuild once
