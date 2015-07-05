@@ -44,8 +44,8 @@
 
 (defop :1NNN
   "Jump to address NNN"
-  [state opcode]
-  (merge state {:PC (:NNN opcode)}))
+  [state {:keys [NNN NN N VX VY]}]
+  (merge state {:PC NNN}))
 
 (defop :2NNN
   "Execute subroutine starting at address NNN"
@@ -54,8 +54,8 @@
 
 (defop :3XNN
   "Skip the following instruction if the value of register VX equals NN"
-  [state opcode]
-  (if (= (nth (:VX state) (:VX opcode)) (:NN opcode))
+  [state {:keys [NNN NN N VX VY]}]
+  (if (= (nth (:VX state) VX) NN)
     ;; skip next
     (println "TODO")
     ))
@@ -71,8 +71,8 @@
 
 (defop :6XNN
   "Store number NN in register VX."
-  [state opcode]
-  (merge state {:VX (assoc (:VX state) (:VX opcode))}))
+  [state {:keys [NNN NN N VX VY]}]
+  (merge state {:VX (assoc (:VX state) VX)}))
 
 (defop :7XNN
   "Add the value NN to register VX."

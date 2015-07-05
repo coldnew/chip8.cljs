@@ -16,6 +16,10 @@
 (defn b []
   ((:a bb)))
 
+(defn create-vm
+  []
+  {:cpu (make-cpu) :screen (make-screen)})
+
 (defn init
   "Initial chip8 system."
   [])
