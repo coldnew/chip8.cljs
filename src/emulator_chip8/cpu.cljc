@@ -53,8 +53,8 @@
 (defn reset-cpu
   "Reset the full cpu state."
   []
-  (make-cpu))
-
+  (-> (make-cpu)
+      load-fontset))
 
 ;; Default fontsets, it will be add to memory
 (def fontset
@@ -75,3 +75,10 @@
    0xF0 0x80 0xF0 0x80 0xF0 ; E
    0xF0 0x80 0xF0 0x80 0x80 ; F
    ])
+
+(defn load-fontset
+  "load fonts to chip8's memory."
+  [state]
+  (let [memory (:memory state)
+        c (count memory)]
+    (merge state {:memory (vec (take c (into fontset memory)))})))
