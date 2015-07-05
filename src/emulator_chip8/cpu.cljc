@@ -85,3 +85,9 @@
   []
   (-> (make-cpu)
       load-fontset))
+
+(defn step
+  "Step through the cpu."
+  [state]
+  ;; TODO:
+  )
