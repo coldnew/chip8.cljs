@@ -44,6 +44,7 @@
 (defn make-handler-sets
   "Create possible opcode set for opcode-list"
   [opcode]
+  ;; TODO: cljs lack format
   (let [code (format "%04X" opcode)
         ZNNN (format "%SNNN" (subs code 0 1))
         ZXNN (format "%SXNN" (subs code 0 1))
@@ -58,12 +59,13 @@
   "Parse the code to find how many VX, VY, NNN, NN, N
   and create argument lists."
   [opcode]
+  ;; TODO: cljs lack format
   (let [code (format "%04X" opcode)]
-    {:NNN (subs code 1 4)
-     :NN  (subs code 2 4)
-     :N   (subs code 3 4)
-     :VX  (subs code 1 2)
-     :VY  (subs code 2 3)}))
+    {:NNN (read-string (subs code 1 4))
+     :NN  (read-string (subs code 2 4))
+     :N   (read-string (subs code 3 4))
+     :VX  (read-string (subs code 1 2))
+     :VY  (read-string (subs code 2 3))}))
 
 (defn find-match-handler
   "Search for matching handler in handler list.
@@ -93,166 +95,167 @@
 ;; defmulti ?
 ;; http://www.braveclojure.com/multimethods-records-protocols/
 
+;; Execute machine language subroutine at address NNN
 (defop :0NNN
-  "Execute machine language subroutine at address NNN"
   )
 
+;; Clear the screen
 (defop :00E0
-  "Clear the screen"
-  [])
+  )
 
+;; Return from a subroutine
 (defop :00EE
-  "Return from a subroutine"
-  [])
+  )
 
+;; Jump to address NNN
 (defop :1NNN
-  "Jump to address NNN"
   (merge state {:PC NNN}))
 
+;; Execute subroutine starting at address NNN
 (defop :2NNN
-  "Execute subroutine starting at address NNN"
   )
 
+;; Skip the following instruction if the value of register VX equals NN
 (defop :3XNN
-  "Skip the following instruction if the value of register VX equals NN"
   (if (= (nth (:VX state) VX) NN)
     ;; skip next
     (println "TODO")
     ))
 
+;; Skip the following instruction if the value of register VX is not equal to NN
 (defop :4XNN
-  "Skip the following instruction if the value of register VX is not equal to
-  NN"
   )
 
+;; Skip the following instruction if the value of register VX is equal to the
+;; value of register VY
 (defop :5XY0
-  "Skip the following instruction if the value of register VX is equal to the value of register VY"
   )
 
+;; Store number NN in register VX.
 (defop :6XNN
-  "Store number NN in register VX."
   (merge state {:VX (assoc (:VX state) VX)})
   )
 
+;; Add the value NN to register VX.
 (defop :7XNN
-  "Add the value NN to register VX."
   )
 
+;; Store the value of register VY in register VX.
 (defop :8XY0
-  "Store the value of register VY in register VX"
   )
 
+;; Set VX to VX OR VY.
 (defop :8XY1
-  "Set VX to VX OR VY"
   )
 
+;; Set VX to VX AND VY.
 (defop :8XY2
-  "Set VX to VX AND VY"
   )
 
+;; Set VX to VX XOR VY.
 (defop :8XY3
-  "Set VX to VX XOR VY"
   )
 
+;; Add the value of register VY to register VX.
+;;  Set VF to 1 if a carry occurs
+;;  Set VF to 0 if a carry does not occur.
 (defop :8XY4
-  "Add the value of register VY to register VX.
-  Set VF to 1 if a carry occurs
-  Set VF to 0 if a carry does not occur."
   )
 
+;; Subtract the value of register VY from register VX
+;; Set VF to 0 if a borrow occurs
+;; Set VF to 1 if a borrow does not occur.
 (defop :8XY5
-  "Subtract the value of register VY from register VX
-  Set VF to 0 if a borrow occurs
-  Set VF to 1 if a borrow does not occur."
   )
 
+;; Store the value of register VY shifted right one bit in register VX.
+;; Set register VF to the least significant bit prior to the shift.
 (defop :8XY6
-  "Store the value of register VY shifted right one bit in register VX.
-  Set register VF to the least significant bit prior to the shift."
   )
 
+;; Set register VX to the value of VY minus VX
+;; Set VF to 00 if a borrow occurs
+;; Set VF to 01 if a borrow does not occur
 (defop :8XY7
-  "Set register VX to the value of VY minus VX
-  Set VF to 00 if a borrow occurs
-  Set VF to 01 if a borrow does not occur"
   )
 
+;; Store the value of register VY shifted left one bit in register VX.
+;; Set register VF to the most significant bit prior to the shift.
 (defop :8XYE
-  "Store the value of register VY shifted left one bit in register VX.
-  Set register VF to the most significant bit prior to the shift."
   )
 
+;; Skip the following instruction if the value of register VX is not equal to
+;; the value of register VY.
 (defop :9XY0
-  "Skip the following instruction if the value of register VX is not equal to
-  the value of register VY."
   )
 
+;; Store memory address NNN in register I
 (defop :ANNN
-  "Store memory address NNN in register I"
+
   )
 
+;; Jump to address NNN + V0
 (defop :BNNN
-  "Jump to address NNN + V0"
   )
 
+;; Set VX to a random number with a mask of NN
 (defop :CXNN
-  "Set VX to a random number with a mask of NN"
   )
 
+;; Draw a sprite at position VX, VY with N bytes of sprite data starting at the
+;; address stored in I. Set VF to 01 if any set pixels are changed to unset, and
+;; 00 otherwise
 (defop :DXYN
-  "Draw a sprite at position VX, VY with N bytes of sprite data starting at the
-  address stored in I. Set VF to 01 if any set pixels are changed to unset, and
-  00 otherwise"
   )
 
+;; Skip the following instruction if the key corresponding to the hex value
+;; currently stored in register VX is pressed.
 (defop :EX9E
-  "Skip the following instruction if the key corresponding to the hex value
-  currently stored in register VX is pressed."
   )
 
+;; Skip the following instruction if the key corresponding to the hex value
+;; currently stored in register VX is not pressed.
 (defop :EXA1
-  "Skip the following instruction if the key corresponding to the hex value
-  currently stored in register VX is not pressed."
   )
 
+;; Store the current value of the delay timer in register VX.
 (defop :FX07
-  "Store the current value of the delay timer in register VX."
   )
 
+;; Wait for a keypress and store the result in register VX.
 (defop :FX0A
-  "Wait for a keypress and store the result in register VX."
   )
 
+;; Set the delay timer to the value of register VX.
 (defop :FX15
-  "Set the delay timer to the value of register VX."
   )
 
+;; Set the sound timer to the value of register VX.
 (defop :FX18
-  "Set the sound timer to the value of register VX."
   )
 
+;; Add the value stored in register VX to register I.
 (defop :FX1E
-  "Add the value stored in register VX to register I."
   )
 
+;; Set I to the memory address of the sprite data corresponding to the
+;; hexadecimal digit stored in register VX.
 (defop :FX29
-  "Set I to the memory address of the sprite data corresponding to the
-  hexadecimal digit stored in register VX."
   )
 
+;; Store the binary-coded decimal equivalent of the value stored in register VX
+;; at addresses I, I + 1, and I + 2.
 (defop :FX33
-  "Store the binary-coded decimal equivalent of the value stored in register VX
-  at addresses I, I + 1, and I + 2."
   )
 
+;; Store the values of registers V0 to VX inclusive in memory starting at
+;;  address I, I is set to I + X + 1 after operation.
 (defop :FX55
-  "Store the values of registers V0 to VX inclusive in memory starting at
-  address I, I is set to I + X + 1 after operation."
   )
 
+;; Fill registers V0 to VX inclusive with the values stored in memory starting
+;; at address I, I is set to I + X + 1 after operation.
 (defop :FX65
-  "Fill registers V0 to VX inclusive with the values stored in memory starting
-  at address I, I is set to I + X + 1 after operation."
   )
 
 ;;;; Simple Testing Area
@@ -277,6 +280,7 @@
   (make-handler-sets 0xf155)  ; => #{:FXY5 :FNNN :FXYN :FX55 :F155 :FXNN}
   (make-handler-args 0xf155)  ; =>  {:NNN 155, :NN 55, :N 5, :VX 1, :VY 5}
   (find-match-handler @opcode-list 0xf155) ; => :FX55
+
   ;; build the opmap with :type
   (build-opmap 0xf155) ; => {:NNN 155, :NN 55, :N 5, :VX 1, :VY 5, :type :FX55}
 
