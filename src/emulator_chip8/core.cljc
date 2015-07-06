@@ -8,17 +8,17 @@
 ;; enable *print-fn* in clojurescript
 #?(:cljs (enable-console-print!))
 
-(defn aa []
-  (println "this is aa asdasdsadad"))
+;; (defn aa []
+;;   (println "this is aa asdasdsadad"))
 
-(def bb {:a aa})
+;; (def bb {:a aa})
 
-(defn b []
-  ((:a bb)))
+;; (defn b []
+;;   ((:a bb)))
 
-(defn create-vm
-  []
-  {:cpu (make-cpu) :screen (make-screen)})
+;; (defn create-vm
+;;   []
+;;   {:cpu (make-cpu) :screen (make-screen)})
 
 (defn init
   "Initial chip8 system."
@@ -30,7 +30,7 @@
   ;;   (if arg1
   ;;     (println "TODO:")
   ;;     (println "Error: Please specify filename.")))
-  (b)
+;;  (b)
   (println (str "-->> " @opcode-list))
   )
 
