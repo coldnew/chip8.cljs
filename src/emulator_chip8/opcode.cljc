@@ -30,19 +30,14 @@
 ;;#?(:clj
 (defmacro defop
   [key & body]
-  (let [ pname (symbol (str "opcode-" (name key)))
-        args ['state 'opcode]
-        ]
-    `(do
-       ;;          (defn ~pname ~args ~@body)
+  `(do
+     (defmethod handler ~key
+       ~['state {:keys ['NNN 'NN 'N 'VX 'VY]}]
+       ~@body)
 
-       (defmethod handler ~key
-         ~['state {:keys ['NNN 'NN 'N 'VX 'VY]}]
-         ~@body)
-
-       (swap! opcode-list conj ~key)
-       )
-    ))
+     (swap! opcode-list conj ~key)
+     )
+  )
 ;;)
 
 
