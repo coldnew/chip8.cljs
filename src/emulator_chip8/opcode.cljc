@@ -1,6 +1,17 @@
 (ns emulator-chip8.opcode
   #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop]]))
-  )
+  (:require
+   #?(:clj
+      [clojure.pprint :refer [cl-format]]
+      :cljs
+      [cljs.pprint :refer [cl-format]])))
+
+
+(comment
+  (ns emulator-chip8.opcode
+    (:require
+     [clojure.pprint :refer [cl-format]])))
+
 
 ;; #?(:clj
 ;;    (defmacro defop
@@ -40,27 +51,55 @@
   )
 ;;)
 
+(comment
+  (defn make-handler-sets
+    "Create possible opcode set for opcode-list"
+    [opcode]
+    ;; TODO: cljs lack format
+    (let [code (format "%04X" opcode)
+          ZNNN (format "%SNNN" (subs code 0 1))
+          ZXNN (format "%SXNN" (subs code 0 1))
+          ZXYN (format "%SXYN" (subs code 0 1))
+          ZXYZ (format "%SXY%S" (subs code 0 1) (subs code 3 4))
+          ZXZZ (format "%SX%S"  (subs code 0 1) (subs code 2 4))]
+      (->> (list code ZNNN ZXNN ZXZZ ZXYN ZXYZ)
+           (map keyword)
+           (set)))) )
 
 (defn make-handler-sets
   "Create possible opcode set for opcode-list"
   [opcode]
   ;; TODO: cljs lack format
-  (let [code (format "%04X" opcode)
-        ZNNN (format "%SNNN" (subs code 0 1))
-        ZXNN (format "%SXNN" (subs code 0 1))
-        ZXYN (format "%SXYN" (subs code 0 1))
-        ZXYZ (format "%SXY%S" (subs code 0 1) (subs code 3 4))
-        ZXZZ (format "%SX%S"  (subs code 0 1) (subs code 2 4))]
+  (let [code (cl-format nil "~4,'0x" opcode)
+        ZNNN (cl-format nil "~ANNN" (subs code 0 1))
+        ZXNN (cl-format nil "~AXNN" (subs code 0 1))
+        ZXYN (cl-format nil "~AXYN" (subs code 0 1))
+        ZXYZ (cl-format nil "~AXY~A" (subs code 0 1) (subs code 3 4))
+        ZXZZ (cl-format nil "~AX~A"  (subs code 0 1) (subs code 2 4))]
     (->> (list code ZNNN ZXNN ZXZZ ZXYN ZXYZ)
          (map keyword)
          (set))))
+
+(comment
+  (defn make-handler-args
+    "Parse the code to find how many VX, VY, NNN, NN, N
+  and create argument lists."
+    [opcode]
+    ;; TODO: cljs lack format
+    (let [code (format "%04X" opcode)]
+      {:NNN (read-string (subs code 1 4))
+       :NN  (read-string (subs code 2 4))
+       :N   (read-string (subs code 3 4))
+       :VX  (read-string (subs code 1 2))
+       :VY  (read-string (subs code 2 3))})))
+
 
 (defn make-handler-args
   "Parse the code to find how many VX, VY, NNN, NN, N
   and create argument lists."
   [opcode]
   ;; TODO: cljs lack format
-  (let [code (format "%04X" opcode)]
+  (let [code (cl-format nil "~4,'0x" opcode)]
     {:NNN (read-string (subs code 1 4))
      :NN  (read-string (subs code 2 4))
      :N   (read-string (subs code 3 4))
