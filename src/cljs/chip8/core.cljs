@@ -17,7 +17,7 @@
                           :columns 64
                           :scale 10
                           :data (vec (repeat 32
-                                             (vec (repeat 64 1))))
+                                             (vec (repeat 64 0))))
                           }
                  :rom {:id "rom_selector"
                        :name ""}
@@ -46,16 +46,16 @@
 (defn main []
 
   ;; Initial Rom Selector
-  (rom/refresh-selector (:rom @app-state))
+  (rom/refresh-selector app-state)
 
   ;; Initial screen canvas
-  (screen/initial (:screen @app-state))
+  (screen/initial app-state)
 
   ;; Initial cpu state
 
   ;; Track when user select another rom
   (.addEventListener
-   (dom/getElement (:id (:rom @app-state))) "change"
+   (dom/getElement (rom/get-rom-id app-state)) "change"
    (fn [event]
      (let [rom-name (.-target.value event)]
        ;; We only trigger the event when the
@@ -69,7 +69,6 @@
          ;; update rom-name in app-state
          (swap! app-state assoc-in [:rom] {:name rom-name})
 
-
          (load-rom rom-name @app-state)
 
          ;; Blur rom-selector
@@ -77,7 +76,7 @@
          ;;(.blur (dom/getElement (:id (:rom @app-state))))
 
          ;; Make focus on canvas
-         (.focus (dom/getElement (:id (:screen @app-state))))
+         (.focus (screen/get-screen-canvas app-state))
          )
        )
      ))

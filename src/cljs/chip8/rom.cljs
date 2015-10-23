@@ -1,6 +1,14 @@
 (ns chip8.rom
-  (:require [goog.dom :as dom])
-  )
+  (:require [goog.dom :as dom]))
+
+(defn- get-rom [state]
+  (:rom @state))
+
+(defn- get-rom-val [state key]
+  (key (get-rom state)))
+
+(defn get-rom-id [state]
+  (get-rom-val state :id))
 
 ;; These roms are locate at resource/publis/roms
 ;; which is collect from the internet
@@ -13,13 +21,13 @@
 (defn- add-rom
   "Add rom to chooser ID"
   [state rom]
-  (let [rom-selector (dom/getElement (:id state))
+  (let [rom-selector (dom/getElement (get-rom-val state :id))
         option (dom/createElement "option")]
+    ;;(.log js/console rom)
     (set! (.-value option) rom)
     (set! (.-innerHTML option) rom)
-    (.appendChild rom-selector option)
-    ;;(.log js/console rom)
-    ))
+    (.appendChild rom-selector option))
+  state)
 
 (defn refresh-selector
   "Add all roms to ID in roms"
@@ -27,10 +35,5 @@
   (loop [r roms]
     (when (seq r)
       (add-rom state (first r))
-      (recur (rest r)))))
-
-(defn add-listener
-  "Add Listener when rom is changed"
-  [state callback-fn]
-  (let [rom-selector (dom/getElement (:id state))]
-    (.addEventListener rom-selector "change" callback-fn)))
+      (recur (rest r))))
+  state)
