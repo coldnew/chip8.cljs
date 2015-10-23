@@ -13,3 +13,4 @@ pom.xml.asc
 resources/public/js/
 .nrepl-history
 figwheel_server.log
+out/

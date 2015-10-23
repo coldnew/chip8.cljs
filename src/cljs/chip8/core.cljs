@@ -7,6 +7,7 @@
             [chip8.rom :as rom]
             [goog.dom :as dom]
             [goog.events :as events]
+            [goog.net.EventType :as event-type]
             ))
 
 ;; The full application state
@@ -16,10 +17,11 @@
                           :columns 64
                           :scale 10
                           :data (vec (repeat 32
-                                             (vec (repeat 64 0))))
+                                             (vec (repeat 64 1))))
                           }
                  :rom {:id "rom_selector"
                        :name ""}
+                 :cpu {}
                  }))
 
 ;; # Load rom event
@@ -31,16 +33,15 @@
   [name states]
   (let [req (goog.net.XhrIo.)]
     (.setResponseType req "arraybuffer")
-    ;; (events/listen req goog.net.EventType/SUCCESS
-    ;;                (fn [n]
-    ;;                  ;;(cpu/load-rom states (js/Uint8Array. (.getResponse req)))
+    (events/listen req event-type/SUCCESS
+                   (fn [n]
+                     ;;(cpu/load-rom states (js/Uint8Array. (.getResponse req)))
 
-    ;;                  ;; log data
-    ;;                  ;;                     (.log js/console  "--> "  (js/Uint8Array. (.getResponse req))))
-    ;;                  ))
+                     ;; log data
+                     ;; (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
+                     ))
 
     (.send req (str "roms/" name) "GET")))
-
 
 (defn main []
 
@@ -50,26 +51,35 @@
   ;; Initial screen canvas
   (screen/initial (:screen @app-state))
 
-  (rom/add-listener (:rom @app-state)
-                    (fn [event]
-                      (let [rom-name (.-target.value event)]
-                        ;; We only trigger the event when the
-                        ;; rom is member in rom/roms
-                        (when (some #{rom-name} rom/roms)
-                          ;; Display rom name for debug
-                          (.log js/console "Select rom: " rom-name)
+  ;; Initial cpu state
 
-                          ;; update rom-name in app-state
-                          (swap! app-state assoc-in [:rom] {:name rom-name})
+  ;; Track when user select another rom
+  (.addEventListener
+   (dom/getElement (:id (:rom @app-state))) "change"
+   (fn [event]
+     (let [rom-name (.-target.value event)]
+       ;; We only trigger the event when the
+       ;; rom is member in rom/roms
+       (when (some #{rom-name} rom/roms)
+         ;; Display rom name for debug
+         (.log js/console "Select rom: " rom-name)
 
-                          ;; Blur rom-selector
-                          ;; FIXME:
-                          ;; (.blur (dom/getElement (:id (:rom @app-state))))
+         (screen/render @app-state)
 
-                          ;; Make focus on canvas
-                          (.focus (dom/getElement (:id (:screen @app-state))))
-                          )
-                        )
-                      ))
+         ;; update rom-name in app-state
+         (swap! app-state assoc-in [:rom] {:name rom-name})
+
+
+         (load-rom rom-name @app-state)
+
+         ;; Blur rom-selector
+         ;; FIXME:
+         ;;(.blur (dom/getElement (:id (:rom @app-state))))
+
+         ;; Make focus on canvas
+         (.focus (dom/getElement (:id (:screen @app-state))))
+         )
+       )
+     ))
 
   )
