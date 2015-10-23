@@ -1,4 +1,4 @@
-(ns emulator-chip8.cpu)
+(ns chip8.cpu)
 
 (defrecord State [memory stack SP PC V I DT ST])
 

@@ -1,17 +1,13 @@
-(ns emulator-chip8.opcode
-  #?(:cljs (:require-macros [emulator-chip8.opcode :refer [defop]]))
+(ns chip8.opcode
+  ;;#?(:cljs (:require-macros [chip8.opcode :refer [defop]]))
   (:require
    #?(:clj
       [clojure.pprint :refer [cl-format]]
       :cljs
       [cljs.pprint :refer [cl-format]])))
 
-
+;; comment out all
 (comment
-  (ns emulator-chip8.opcode
-    (:require
-     [clojure.pprint :refer [cl-format]])))
-
 
 ;; #?(:clj
 ;;    (defmacro defop
@@ -293,3 +289,6 @@
   (build-opmap 0xf155) ; => {:NNN 155, :NN 55, :N 5, :VX 1, :VY 5, :type :FX55}
 
   )
+
+
+)
