@@ -3,8 +3,10 @@
 ;; That's why we still use dom here.
 
 (ns chip8.core
-  (:require [chip8.screen :as screen]
+  (:require [chip8.cpu :as cpu]
+            [chip8.screen :as screen]
             [chip8.rom :as rom]
+            [chip8.sound :as sound]
             [goog.dom :as dom]
             [goog.events :as events]
             [goog.net.EventType :as event-type]
@@ -12,16 +14,9 @@
 
 ;; The full application state
 (def app-state (atom
-                {:screen {:id "canvas"
-                          :rows 32
-                          :columns 64
-                          :scale 10
-                          :data (vec (repeat 32
-                                             (vec (repeat 64 0))))
-                          }
-                 :rom {:id "rom_selector"
-                       :name ""}
-                 :cpu {}
+                {:screen (screen/make-screen)
+                 :rom    (rom/make-rom)
+                 :cpu    (cpu/make-cpu)
                  }))
 
 ;; # Load rom event
@@ -53,7 +48,7 @@
 
   ;; Initial cpu state
 
-  ;; Track when user select another rom
+    ;; Track when user select another rom
   (.addEventListener
    (dom/getElement (rom/get-rom-id app-state)) "change"
    (fn [event]
@@ -82,3 +77,7 @@
      ))
 
   )
+
+;;(sound/start-buzzer)
+
+(sound/stop-buzzer)

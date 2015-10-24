@@ -37,3 +37,9 @@
       (add-rom state (first r))
       (recur (rest r))))
   state)
+
+
+(defn make-rom
+  []
+  {:id "rom_selector"
+   :name ""})

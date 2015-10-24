@@ -48,7 +48,7 @@
   (fill state "#FFFFFF"))
 
 (defn render
-  "Render the canvas according to data."
+  "Render the canvas according to screen memory."
   [state]
   (let [canvas  (get-screen-canvas state)
         ctx     (get-context canvas)
@@ -62,13 +62,27 @@
     (set! (.-fillStyle ctx) "#000000")
     (dotimes [x columns]
       (dotimes [y rows]
-        (if-not (zero? (get-in (get-screen-elm state :data) [y x]))
+        (if-not (zero? (get-in (get-screen-elm state :memory) [y x]))
           (.fillRect ctx (* x scale) (* y scale) scale scale)))))
   state)
 
+(defn make-screen
+  "Create the hashmap used by screen."
+  []
+  (let [rows    32
+        columns 64
+        scale   10]
+    {:id "canvas"
+     :rows rows
+     :columns columns
+     :scale scale
+     :memory (vec (repeat rows
+                          (vec (repeat columns 0))))
+     }))
+
 (defn initial
   [state]
- ;; (.log js/console "---> " (str state))
+  ;; (.log js/console "---> " (str state))
   (-> state
       ;; Initial Canvas and resize
       resize-canvas
