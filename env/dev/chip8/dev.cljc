@@ -12,6 +12,13 @@
       [cljs.core.async :refer [put!]]
       [weasel.repl :as weasel]))
   #?(:clj (:gen-class)))
+;; macro for detect environment in both clj/cljs
+#?(:clj
+   (defmacro env [kw]
+     (environ/env kw)))
+
+(def is-dev?
+  (env :is-dev))
 
 ;; inject development html to enlive
 #?(:clj
@@ -26,13 +33,6 @@
    (defn browser-repl []
      (piggieback/cljs-repl (weasel/repl-env :ip "127.0.0.1" :port 9001))))
 
-;; macro for detect environment in both clj/cljs
-#?(:clj
-   (defmacro env [kw]
-     (environ/env kw)))
-
-(def is-dev?
-  (env :is-dev))
 
 #?(:cljs
    (defn start-development-environment [main-fn]
