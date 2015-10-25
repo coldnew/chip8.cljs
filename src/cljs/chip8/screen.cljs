@@ -67,7 +67,7 @@
   state)
 
 (defn make-screen
-  "Create the hashmap used by screen."
+  "Create the hashmap used by screen"
   []
   (let [rows    32
         columns 64

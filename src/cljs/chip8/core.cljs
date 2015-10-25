@@ -9,15 +9,15 @@
             [chip8.dev :refer [is-dev?]]
             [goog.dom :as dom]
             [goog.events :as events]
-            [goog.net.EventType :as event-type]
-            ))
+            [goog.net.EventType :as event-type]))
 
 ;; The full application state
 (def app-state (atom
-                {:screen (screen/make-screen)
+                {
                  :rom    {:id "rom_selector"
                           :name ""}
                  :cpu    (cpu/make-cpu)
+                 :screen (screen/make-screen)
                  }))
 
 ;; These roms are locate at resource/publis/roms
@@ -38,7 +38,6 @@
     (set! (.-innerHTML option) rom)
     (.appendChild rom-selector option))
   state)
-
 
 (defn update-rom-selector
   [state]
@@ -70,10 +69,8 @@
   ;; Initial Rom Selector
   (update-rom-selector app-state)
 
-  ;; Initial screen canvas
-  (screen/initial app-state)
-
   ;; Initial cpu state
+  (cpu/initial-vm app-state)
 
   ;; Track when user select another rom
   (.addEventListener
@@ -86,7 +83,7 @@
          ;; Display rom name for debug
          (.log js/console "Select rom: " rom-name)
 
-         (screen/render @app-state)
+ ;;        (screen/render @app-state)
 
          ;; update rom-name in app-state
          (swap! app-state assoc-in [:rom] {:name rom-name})
@@ -98,7 +95,7 @@
          ;;(.blur (dom/getElement (:id (:rom @app-state))))
 
          ;; Make focus on canvas
-         (.focus (screen/get-screen-canvas app-state))
+ ;;        (.focus (screen/get-screen-canvas app-state))
          )
        )
      ))
