@@ -28,16 +28,24 @@
   [state]
   (fill state "#FFFFFF"))
 
+(defn- protect-region
+  "Prevent v ovrflow on bound."
+  [v bound]
+  (if (> v (dec bound))
+    (protect-region (- v bound) bound) v))
+
 (defn set-pixel
   "Set the pixel on screen according x, y.
-Note that the pixel cooridinate is the same as CHIP-8 original
-implementation."
+  Note that the pixel cooridinate is the same as CHIP-8 original
+  implementation."
   [state x y]
-  (.log js/console (str "X:" x " Y:" y))
-
   (let [screen (:screen state)
-        val (get-in (:memory screen) [x y])
-        memory (assoc-in (:memory screen) [x y] (bit-xor val 1))]
+        columns (:columns screen)
+        rows    (:rows screen)
+        nx (protect-region x columns)
+        ny (protect-region y rows)
+        val (get-in (:memory screen) [nx ny])
+        memory (assoc-in (:memory screen) [nx ny] (bit-xor val 1))]
     (-> state
         (assoc-in [:screen :memory] memory))))
 

@@ -1,7 +1,7 @@
 (ns chip8.cpu
   (:require [chip8.screen :as screen]
             [goog.dom :as dom])
-            )
+  )
 
 
 (defn- make-memory
@@ -29,6 +29,20 @@
      (take size
            (into fonts
                  (vec (repeat size 0)))))))
+
+(defn- assoc-in-range
+  "Update arr with val from start."
+  ([arr val] (assoc-in-range arr val 0))
+  ([arr val start]
+  (let [bound (range (count val))]
+    (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound))))
+
+(defn- get-in-range
+  "Get arr from start to end."
+  ([arr start end] (get-in-range arr (range start end)))
+  ([arr rge]
+   (reduce #(conj %1 (get-in arr [%2])) [] rge)))
+
 
 ;;;; CPU States
 
@@ -67,14 +81,14 @@
    ;; register (DT) is non-zero.
    ;; This timer does nothing more than subtract 1 from the
    ;; value of DT at a rate of 60Hz. When DT reaches 0, it deactivates.
-   :dt 0
+   :delay-timer 0
 
    ;; The sound timer is active whenever the sound timer
    ;; register (ST) is non-zero. This timer also decrements
    ;; at a rate of 60Hz, however, as long as ST's value is
    ;; greater than zero, the Chip-8 buzzer will sound. When ST
    ;; reaches zero, the sound timer deactivates.
-   :st 0
+   :sound-timer 0
 
    ;; This is special flag for canvas function to know when
    ;; to update the canvas screen. If the flag not zero,
@@ -311,6 +325,57 @@
 ;;         (assoc-in [:cpu :pc] 2))))
 
 
+(defn opcode-FX55
+  "Store registers V0 through Vx in memory starting at location I."
+  [state X]
+  (let [I (:i (:cpu state))
+        V (:v (:cpu state))
+        mem (:memory (:cpu state))
+        memory (assoc-in-range mem V I)]
+    (-> state
+        (assoc-in [:cpu :memory] memory)
+        (assoc-in [:cpu :pc] 2))))
+
+(defn opcode-FX65
+  "Read registers V0 through Vx from memory starting at location I."
+  [state X]
+  (let [I (:i (:cpu state))
+        memory (:memory (:cpu state))
+        V (assoc-in-range (:v (:cpu state))
+                          (get-in-range memory I (+ I X)))]
+    (-> state
+        (assoc-in [:cpu :v] V)
+        (assoc-in [:cpu :pc] 2))))
+
+
+(-> (make-vm)
+    (assoc-in [:cpu :i] 4)
+    (opcode-FX55 3)
+    :cpu
+    :memory)
+
+(-> (make-vm)
+    (assoc-in [:cpu :i] 4)
+    (opcode-FX65 3)
+    :cpu
+    :v)
+
+(->> (make-vm)
+     :cpu
+     :memory
+     (drop 3)
+     (take 16))
+
+(defn opcode-FX1E
+  "Set I = I + Vx."
+  [state X]
+  (let [V (:v (:cpu state))
+        Vx (nth V X)
+        I (:i (:cpu state))]
+    (-> state
+        (assoc-in [:cpu :i] (+ I Vx))
+        (assoc-in [:cpu :pc] 2))))
+
 (comment
 
   ;; create the cpu state and load memory into it
@@ -333,35 +398,6 @@
       :v)
 
   (:memory (:screen (screen/set-pixel (make-vm) 0 1)))
-  )
-
-
-
-(defn initial-vm [state]
-
-  ;; Initial screen canvas
-  ;;(screen/initial (make-vm))
-
-  ;;(.log js/console "-------")
-;;  (.log js/console (dom/getElement "canvas"))
-  ;;(.log js/console (str "memory:" (get-in (:memory (:screen (make-vm))) [63 31])))
-  ;;(.log js/console (str "memory:" (assoc-in (:memory (:screen (make-vm))) [63 31] 1)))
-  ;;(screen/render (make-vm))
-
-  ;;(screen/set-pixel (make-vm) 63 31)
-
-  (.log js/console (str
-                    (assoc-in [[1 1 1]
-                               [1 1 1]
-                               [1 1 1]] [2 2] 0)
-                    ))
-
-  (.log js/console
-        (str "val: "
-         (get-in
-          (assoc-in (:memory (:screen (make-vm))) [63 31] 9)
-          [63 31]
-         )))
 
   (-> (make-vm)
       (screen/set-pixel 31 31)
@@ -371,13 +407,26 @@
       (screen/set-pixel 33 0)
       (screen/set-pixel 63 0)
       (screen/set-pixel 63 31)
-      (screen/render)
-      )
+      ;; test value overflow
+      (screen/set-pixel 64 64)
+      (screen/render))
+  )
 
 
 
-;;  (.log js/console (str "memory:" (:memory (:screen (make-vm)))))
+(defn initial-vm [state]
 
-  ;;(screen/render (screen/set-pixel (make-vm) 63 31))
+  ;; Initial screen canvas
+  (screen/initial (make-vm))
 
+  (-> (make-vm)
+      (screen/set-pixel 31 31)
+      (screen/set-pixel 1 1)
+      (screen/set-pixel 0 31)
+      (screen/set-pixel 31 0)
+      (screen/set-pixel 33 0)
+      (screen/set-pixel 63 0)
+      (screen/set-pixel 63 31)
+      (screen/set-pixel 64 0)
+      (screen/render))
   )
