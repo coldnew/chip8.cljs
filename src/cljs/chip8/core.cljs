@@ -69,6 +69,10 @@
   ;; Initial Rom Selector
   (update-rom-selector app-state)
 
+  (.log js/console "-->")
+  (.log js/console (str (dom/getElement "canvas")))
+  (.log js/console "-->")
+
   ;; Initial cpu state
   (cpu/initial-vm app-state)
 

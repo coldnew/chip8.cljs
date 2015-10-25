@@ -1,6 +1,8 @@
 (ns chip8.cpu
-  (:require [chip8.screen :as screen])
-  )
+  (:require [chip8.screen :as screen]
+            [goog.dom :as dom])
+            )
+
 
 (defn- make-memory
   "Create CHIP8 memory, which is 4096 bytes (4kb)."
@@ -291,9 +293,22 @@
   [state X NN]
   (let [V (:v (:cpu state))
         Vx (bit-and (rand-int 256) NN)]
-      (-> state
-          (assoc-in [:cpu :v] (assoc V X Vx))
-          (assoc-in [:cpu :pc] 2))))
+    (-> state
+        (assoc-in [:cpu :v] (assoc V X Vx))
+        (assoc-in [:cpu :pc] 2))))
+
+
+;; (defn opcode-DXYN
+;;   "Display n-byte sprite starting at memory location I at (Vx, Vy),
+;;   set VF = collision."
+;;   [state X Y N]
+;;   (let [V (:v (:cpu state))
+;;         Vx (bit-and (rand-int 256) NN)
+;;         ]
+;;     (-> state
+;;         (assoc-in [:cpu :v] (assoc V 0xF 0))
+;;         ;;
+;;         (assoc-in [:cpu :pc] 2))))
 
 
 (comment
@@ -316,10 +331,53 @@
       (opcode-8XY4 1 3)
       :cpu
       :v)
+
+  (:memory (:screen (screen/set-pixel (make-vm) 0 1)))
   )
+
+
 
 (defn initial-vm [state]
 
   ;; Initial screen canvas
-  (screen/initial state)
+  ;;(screen/initial (make-vm))
+
+  ;;(.log js/console "-------")
+;;  (.log js/console (dom/getElement "canvas"))
+  ;;(.log js/console (str "memory:" (get-in (:memory (:screen (make-vm))) [63 31])))
+  ;;(.log js/console (str "memory:" (assoc-in (:memory (:screen (make-vm))) [63 31] 1)))
+  ;;(screen/render (make-vm))
+
+  ;;(screen/set-pixel (make-vm) 63 31)
+
+  (.log js/console (str
+                    (assoc-in [[1 1 1]
+                               [1 1 1]
+                               [1 1 1]] [2 2] 0)
+                    ))
+
+  (.log js/console
+        (str "val: "
+         (get-in
+          (assoc-in (:memory (:screen (make-vm))) [63 31] 9)
+          [63 31]
+         )))
+
+  (-> (make-vm)
+      (screen/set-pixel 31 31)
+      (screen/set-pixel 1 1)
+      (screen/set-pixel 0 31)
+      (screen/set-pixel 31 0)
+      (screen/set-pixel 33 0)
+      (screen/set-pixel 63 0)
+      (screen/set-pixel 63 31)
+      (screen/render)
+      )
+
+
+
+;;  (.log js/console (str "memory:" (:memory (:screen (make-vm)))))
+
+  ;;(screen/render (screen/set-pixel (make-vm) 63 31))
+
   )
