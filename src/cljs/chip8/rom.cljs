@@ -23,21 +23,17 @@
   [state rom]
   (let [rom-selector (dom/getElement (get-rom-val state :id))
         option (dom/createElement "option")]
-    ;;(.log js/console rom)
+    (.log js/console rom)
     (set! (.-value option) rom)
     (set! (.-innerHTML option) rom)
     (.appendChild rom-selector option))
   state)
 
 (defn refresh-selector
-  "Add all roms to ID in roms"
   [state]
-  (loop [r roms]
-    (when (seq r)
-      (add-rom state (first r))
-      (recur (rest r))))
+  (doseq [r roms]
+    (add-rom state r))
   state)
-
 
 (defn make-rom
   []

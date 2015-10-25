@@ -5,8 +5,8 @@
 (ns chip8.core
   (:require [chip8.cpu :as cpu]
             [chip8.screen :as screen]
-            [chip8.rom :as rom]
             [chip8.sound :as sound]
+            [chip8.dev :refer [is-dev?]]
             [goog.dom :as dom]
             [goog.events :as events]
             [goog.net.EventType :as event-type]
@@ -15,9 +15,36 @@
 ;; The full application state
 (def app-state (atom
                 {:screen (screen/make-screen)
-                 :rom    (rom/make-rom)
+                 :rom    {:id "rom_selector"
+                          :name ""}
                  :cpu    (cpu/make-cpu)
                  }))
+
+;; These roms are locate at resource/publis/roms
+;; which is collect from the internet
+(def roms ["15PUZZLE" "BLINKY" "BLITZ"   "BRIX"     "CONNECT4"
+           "GUESS"    "HIDDEN" "IBM"     "INVADERS" "KALEID"
+           "MAZE"     "MERLIN" "MISSILE" "PONG"     "PONG2"
+           "PUZZLE"   "SYZYGY" "TANK"    "TETRIS"   "TICTAC"
+           "UFO"      "VBRIX"  "VERS"    "WIPEOFF"])
+
+(defn- add-rom
+  "Add rom to chooser ID"
+  [state rom]
+  (let [rom-selector (dom/getElement "rom_selector")
+        option (dom/createElement "option")]
+    ;; (.log js/console rom)
+    (set! (.-value option) rom)
+    (set! (.-innerHTML option) rom)
+    (.appendChild rom-selector option))
+  state)
+
+
+(defn update-rom-selector
+  [state]
+  (doseq [r roms]
+    (add-rom state r))
+  state)
 
 ;; # Load rom event
 ;;
@@ -41,21 +68,21 @@
 (defn main []
 
   ;; Initial Rom Selector
-  (rom/refresh-selector app-state)
+  (update-rom-selector app-state)
 
   ;; Initial screen canvas
   (screen/initial app-state)
 
   ;; Initial cpu state
 
-    ;; Track when user select another rom
+  ;; Track when user select another rom
   (.addEventListener
-   (dom/getElement (rom/get-rom-id app-state)) "change"
+   (dom/getElement "rom_selector") "change"
    (fn [event]
      (let [rom-name (.-target.value event)]
        ;; We only trigger the event when the
        ;; rom is member in rom/roms
-       (when (some #{rom-name} rom/roms)
+       (when (some #{rom-name} roms)
          ;; Display rom name for debug
          (.log js/console "Select rom: " rom-name)
 
@@ -75,9 +102,4 @@
          )
        )
      ))
-
   )
-
-;;(sound/start-buzzer)
-
-(sound/stop-buzzer)

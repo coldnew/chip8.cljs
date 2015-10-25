@@ -20,7 +20,7 @@
                  [enlive "1.1.6"]
                  [environ "1.0.1"]]
 
-  :plugins [[lein-cljsbuild "1.0.6"]
+  :plugins [[lein-cljsbuild "1.1.0"]
             [lein-environ "1.0.1"]
             [speclj "3.3.1"]
             [lein-figwheel "0.4.1" :exclusions [org.clojure/core.cache]]]
@@ -34,7 +34,7 @@
                                 :optimizations :none
                                 :pretty-print  true}}}}
 
-  :profiles {:dev {:source-paths ["env/dev/clj"]
+  :profiles {:dev {:source-paths ["env/dev"]
                    :test-paths ["test/clj"]
 
                    :dependencies [[figwheel "0.4.1"]
@@ -56,7 +56,7 @@
                    :env {:is-dev true}
 
                    :cljsbuild {;;:test-commands { "test" ["phantomjs" "env/test/js/unit-test.js" "env/test/unit-test.html"] }
-                               :builds {:app {:source-paths ["env/dev/cljs"]}
+                               :builds {:app {:source-paths ["env/dev"]}
                                         ;; :test {:source-paths ["src/cljs" "test/cljs"]
                                         ;;        :compiler {:output-to     "resources/public/js/app_test.js"
                                         ;;                   :output-dir    "resources/public/js/test"
