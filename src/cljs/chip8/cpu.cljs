@@ -140,7 +140,6 @@
     (-> state
         (assoc-in [:cpu :pc] pc-inc))))
 
-
 (defn opcode-4XNN
   "Skip next instruction if VX != NN."
   [state X NN]
@@ -224,8 +223,9 @@
         sum (+ Vx Vy)
         VF (if (> sum 0xFF) 1 0)]
     (-> state
-        (assoc-in [:cpu :v] (assoc V X (bit-and sum 0xFF)))
-        (assoc-in [:cpu :v] (assoc V 0xF VF))
+        (assoc-in [:cpu :v] (-> V
+                                (assoc X (if (> sum 0xFF) (- sum 256) sum))
+                                (assoc 0xF VF)))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-8XY5
@@ -237,8 +237,9 @@
         sub (- Vx Vy)
         VF (if (> Vx Vy) 0 1)]
     (-> state
-        (assoc-in [:cpu :v] (assoc V X (bit-and sub 0xFF)))
-        (assoc-in [:cpu :v] (assoc V 0xF VF))
+        (assoc-in [:cpu :v] (-> V
+                                (assoc X (if (< sub 0) (+ sub 256) sub))
+                                (assoc 0xF VF)))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-8XY6
@@ -249,8 +250,9 @@
         shr (bit-shift-right Vx 1)
         VF (bit-and Vx 0x1)]
     (-> state
-        (assoc-in [:cpu :v] (assoc V X (bit-and VF 0xFF)))
-        (assoc-in [:cpu :v] (assoc V 0xF VF))
+        (assoc-in [:cpu :v] (-> V
+                                (assoc X (bit-and VF 0xFF))
+                                (assoc V 0xF VF)))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-8XY7
@@ -262,8 +264,9 @@
         sub (- Vy Vx)
         VF (if (> Vy Vx) 0 1)]
     (-> state
-        (assoc-in [:cpu :v] (assoc V Y sub))
-        (assoc-in [:cpu :v] (assoc V 0xF VF))
+        (assoc-in [:cpu :v] (-> V
+                                (assoc Y sub)
+                                (assoc 0xF VF)))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-8XYE
@@ -274,8 +277,9 @@
         shl (bit-shift-left Vx 1)
         VF (bit-and Vx 0x80)]
     (-> state
-        (assoc-in [:cpu :v] (assoc V X shl))
-        (assoc-in [:cpu :v] (assoc V 0xF VF))
+        (assoc-in [:cpu :v] (-> V
+                                (assoc X shl)
+                                (assoc 0xF VF)))
         (assoc-in [:cpu :pc] 2))))
 
 
@@ -348,25 +352,6 @@
     (-> state
         (assoc-in [:cpu :v] V)
         (assoc-in [:cpu :pc] 2))))
-
-
-(-> (make-vm)
-    (assoc-in [:cpu :i] 4)
-    (opcode-FX55 3)
-    :cpu
-    :memory)
-
-(-> (make-vm)
-    (assoc-in [:cpu :i] 4)
-    (opcode-FX65 3)
-    :cpu
-    :v)
-
-(->> (make-vm)
-     :cpu
-     :memory
-     (drop 3)
-     (take 16))
 
 (defn opcode-FX1E
   "Set I = I + Vx."
