@@ -3,9 +3,8 @@
 
 (defn- resize-canvas
   "Get canvas element by id and resize canvas."
-  [state]
-  (let [screen  (:screen state)
-        canvas  (dom/getElement (:id screen))
+  [{screen :screen :as state}]
+  (let [canvas  (dom/getElement (:id screen))
         columns (:columns screen)
         rows    (:rows screen)
         scale   (:scale screen)]
@@ -15,9 +14,8 @@
 
 (defn fill
   "Fill canvas with color."
-  [state color]
-  (let [screen (:screen state)
-        canvas (dom/getElement (:id screen))
+  [{screen :screen :as state} color]
+  (let [canvas (dom/getElement (:id screen))
         ctx    (.getContext canvas "2d")]
     (set! (.-fillStyle ctx) color)
     (.fillRect ctx 0 0 (aget canvas "width") (aget canvas "height")))
@@ -38,9 +36,8 @@
   "Set the pixel on screen according x, y.
   Note that the pixel cooridinate is the same as CHIP-8 original
   implementation."
-  [state x y]
-  (let [screen (:screen state)
-        columns (:columns screen)
+  [{screen :screen :as state} x y]
+  (let [columns (:columns screen)
         rows    (:rows screen)
         nx (protect-region x columns)
         ny (protect-region y rows)
@@ -51,9 +48,8 @@
 
 (defn render
   "Render the canvas according to screen memory."
-  [state]
-  (let [screen  (:screen state)
-        canvas  (dom/getElement (:id screen))
+  [{screen :screen :as state}]
+  (let [canvas  (dom/getElement (:id screen))
         ctx     (.getContext canvas "2d")
         columns (:columns screen)
         rows    (:rows screen)
