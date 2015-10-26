@@ -45,6 +45,10 @@
   ([arr rge]
    (reduce #(conj %1 (get-in arr [%2])) [] rge)))
 
+(defn ->bcd [val]
+  [(int (/ val 100))
+   (int (/ (mod val 100) 10))
+   (int (mod val 10))])
 
 ;;;; CPU States
 
@@ -110,12 +114,10 @@
   loaded start at 0x200."
   [state rom]
   (.log js/console  "Load ROM --> "  rom)
-  (let [mem (:memory state)
+  (let [mem (:memory (:cpu state))
         c   (count mem)
         p   (count (vec rom))]
-    (assoc state :memory (vec (into
-                               (into (subvec mem 0 0x200) (vec rom))
-                               (drop (+ 0x200 p) mem))))))
+    (assoc-in state [:cpu :memory] (assoc-in-range mem (vec rom) 0x200))))
 
 (defn opcode-00E0
   "Clear the screen. This function will also set draw-flag to 1
@@ -331,26 +333,78 @@
 ;;         (assoc-in [:cpu :pc] 2))))
 
 
+;; TODO: Ex09E
+
+;; TODO: ExA1
+
+(defn opcode-FX07
+  "Set Vx = delay timer value."
+  [state X]
+  (let [V (:v (:cpu state))
+        delay-timer (:delay-timer (:cpu state))]
+    (-> state
+        (assoc-in [:cpu :v] (assoc V X delay-timer))
+        (assoc-in [:cpu :pc] 2))))
+
+;; TODO: Fx0A
+
+(defn opcode-FX15
+  "Set delay timer = Vx."
+  [state X]
+  (let [Vx (nth (:v (:cpu state)) X)]
+    (-> state
+        (assoc-in [:cpu :delay-timer] Vx)
+        (assoc-in [:cpu :pc] 2))))
+
+(defn opcode-FX18
+  "Set sound timer = Vx."
+  [state X]
+  (let [Vx (nth (:v (:cpu state)) X)]
+    (-> state
+        (assoc-in [:cpu :sound-timer] Vx)
+        (assoc-in [:cpu :pc] 2))))
+
+(defn opcode-FX29
+  "Set I = location of sprite for digit Vx."
+  [state X]
+  (let [I (:i (:cpu state))
+        Vx (nth (:v (:cpu state)) X)]
+    (-> state
+        (assoc-in [:cpu :i] (* 5 Vx))
+        (assoc-in [:cpu :pc] 2))))
+
+(defn opcode-FX33
+  "Store BCD representation of Vx in memory locations I, I+1, I+2."
+  [state X]
+  (let [I (:i (:cpu state))
+        Vx (nth (:v (:cpu state)) X)
+        memory (:memory (:cpu state))
+        val (->bcd Vx)]
+    (-> state
+        (assoc-in [:cpu :memory]
+                  (assoc-in-range memory val I))
+        (assoc-in [:cpu :pc] 2))))
+
 (defn opcode-FX55
   "Store registers V0 through Vx in memory starting at location I."
   [state X]
   (let [I (:i (:cpu state))
         V (:v (:cpu state))
-        mem (:memory (:cpu state))
-        memory (assoc-in-range mem (get-in-range V 0 (inc X)) I)]
+        memory (:memory (:cpu state))]
     (-> state
-        (assoc-in [:cpu :memory] memory)
+        (assoc-in [:cpu :memory]
+                  (assoc-in-range memory (get-in-range V 0 (inc X)) I))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-FX65
   "Read registers V0 through Vx from memory starting at location I."
   [state X]
   (let [I (:i (:cpu state))
-        memory (:memory (:cpu state))
-        V (assoc-in-range (:v (:cpu state))
-                          (get-in-range memory I (+ I X 1)))]
+        memory (:memory (:cpu state))]
     (-> state
-        (assoc-in [:cpu :v] V)
+        (assoc-in [:cpu :v]
+                  (assoc-in-range (:v (:cpu state))
+                                  (get-in-range memory I (+ I X 1))))
         (assoc-in [:cpu :pc] 2))))
 
 (defn opcode-FX1E
@@ -362,43 +416,6 @@
     (-> state
         (assoc-in [:cpu :i] (+ I Vx))
         (assoc-in [:cpu :pc] 2))))
-
-(comment
-
-  ;; create the cpu state and load memory into it
-  (->  (make-cpu)
-       (load-rom [0x1 0x2 0x3 0x4]))
-
-  ;; test change draw flag
-  (:cpu (assoc-in (make-vm) [:cpu :draw-flag] 1))
-
-  (:v (:cpu (opcode-6XNN (make-vm) 3 10)))
-
-  (defn a []
-    (-> (make-cpu)
-        (assoc-in [:cpu :v] [0 254 2 3 4 5 6 7 8 9 10 11 12 13 14 15])
-        ))
-
-  (-> (a)
-      (opcode-8XY4 1 3)
-      :cpu
-      :v)
-
-  (:memory (:screen (screen/set-pixel (make-vm) 0 1)))
-
-  (-> (make-vm)
-      (screen/set-pixel 31 31)
-      (screen/set-pixel 1 1)
-      (screen/set-pixel 0 31)
-      (screen/set-pixel 31 0)
-      (screen/set-pixel 33 0)
-      (screen/set-pixel 63 0)
-      (screen/set-pixel 63 31)
-      ;; test value overflow
-      (screen/set-pixel 64 64)
-      (screen/render))
-  )
-
 
 
 (defn initial-vm [state]
