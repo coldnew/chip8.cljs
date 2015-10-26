@@ -1,5 +1,6 @@
 (ns chip8.cpu
   (:require [chip8.screen :as screen]
+            [chip8.keyboard :as keyboard]
             [goog.dom :as dom]
             )
   )
@@ -128,11 +129,31 @@
       (assoc-in [:cpu :draw-flag] 1)
       (assoc-in [:cpu :pc] 2)))
 
+(defn opcode-00EE
+  "Return from a subroutine."
+  [state]
+  (let [SP (dec (:sp (:cpu state)))
+        stack (:stack (:cpu state))]
+    (-> state
+        (assoc-in [:cpu :sp] SP)
+        (assoc-in [:cpu :pc] (+ 2 (nth stack SP))))))
+
 (defn opcode-1NNN
   "Jump to address NNN."
   [state NNN]
   (-> state
       (assoc-in [:cpu :pc] NNN)))
+
+(defn opcode-2NNN
+  " Call subroutine at nnn."
+  [state NNN]
+  (let [pc (:pc (:cpu state))
+        sp (:sp (:cpu state))
+        stack (:stack (:cpu state))]
+    (-> state
+        (assoc-in [:cpu :stack] (assoc stack sp pc))
+        (assoc-in [:cpu :sp] (inc sp))
+        (assoc-in [:cpu :pc] NNN))))
 
 (defn opcode-3XNN
   "Skip next instruction if VX = NN."
@@ -420,9 +441,15 @@
 
 (defn initial-vm [state]
 
-  ;; Initial screen canvas
-  (screen/initial (make-vm))
+  (-> (make-vm)
+      ;; Initial screen canvas
+      (screen/initial)
 
+      )
+  )
+
+
+(comment
   (-> (make-vm)
       (screen/set-pixel 31 31)
       (screen/set-pixel 1 1)
@@ -432,5 +459,6 @@
       (screen/set-pixel 63 0)
       (screen/set-pixel 63 31)
       (screen/set-pixel 64 0)
-      (screen/render))
+      (screen/render)
+      )
   )
