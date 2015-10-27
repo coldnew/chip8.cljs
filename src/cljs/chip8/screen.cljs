@@ -29,31 +29,27 @@
 (defn- protect-region
   "Prevent v ovrflow on bound."
   [v bound]
-  (if (> v (dec bound))
-    (protect-region (- v bound) bound) v))
+  (cond (> v (dec bound)) (protect-region (- v bound) bound)
+        (< v 0)           (protect-region (+ v bound) bound)
+        :else v))
 
 (defn set-pixel
   "Set the pixel on screen according x, y.
   Note that the pixel cooridinate is the same as CHIP-8 original
   implementation."
-  [{screen :screen :as state} x y]
-  (let [columns (:columns screen)
-        rows    (:rows screen)
-        nx (protect-region x columns)
+  [{{:keys [columns rows memory]} :screen :as state} x y & [val]]
+  (let [nx (protect-region x columns)
         ny (protect-region y rows)
-        val (get-in (:memory screen) [nx ny])
-        memory (assoc-in (:memory screen) [nx ny] (bit-xor val 1))]
+        val-xor (bit-xor (get-in memory [nx ny]) 1)]
     (-> state
-        (assoc-in [:screen :memory] memory))))
+        (assoc-in [:screen :memory]
+                  (assoc-in memory [nx ny] (or val val-xor))))))
 
 (defn render
   "Render the canvas according to screen memory."
-  [{screen :screen :as state}]
-  (let [canvas  (dom/getElement (:id screen))
-        ctx     (.getContext canvas "2d")
-        columns (:columns screen)
-        rows    (:rows screen)
-        scale   (:scale screen)]
+  [{{:keys [columns rows memory scale id]} :screen :as state}]
+  (let [canvas  (dom/getElement id)
+        ctx     (.getContext canvas "2d")]
     ;; clear old canvas first
     (clear state)
     ;; loop through screen, if the element is not zero, draw
@@ -61,7 +57,7 @@
     (set! (.-fillStyle ctx) "#000000")
     (dotimes [x columns]
       (dotimes [y rows]
-        (when-not (zero? (get-in (:memory screen) [x y]))
+        (when-not (zero? (get-in memory [x y]))
           (.fillRect ctx (* x scale) (* y scale) scale scale)))))
   state)
 
@@ -87,6 +83,7 @@
      :scale scale
      :memory (vec (repeat columns
                           (vec (repeat rows 0))))
+     :collision 0
      }))
 
 (defn initial

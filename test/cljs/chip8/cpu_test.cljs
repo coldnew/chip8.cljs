@@ -122,7 +122,7 @@
     (testing "opcode: FX07"
       (is (= 2 (-> cpu (cpu/opcode-FX07 1) :cpu :pc)))
       (is (= 0 (-> cpu (cpu/opcode-FX07 0) :cpu :v (nth 0))))
-      (is (= 5 (-> cpu (assoc-in [:cpu :delay-timer] 5)
+      (is (= 5 (-> cpu (assoc-in [:cpu :dt] 5)
                    (cpu/opcode-FX07 0) :cpu :v (nth 0)))))
 
     ;; TODO: FX0A
@@ -130,11 +130,11 @@
 
     (testing "opcode: FX15"
       (is (= 2 (-> cpu (cpu/opcode-FX15 1) :cpu :pc)))
-      (is (= 1 (-> cpu (cpu/opcode-FX15 0) :cpu :delay-timer))))
+      (is (= 1 (-> cpu (cpu/opcode-FX15 0) :cpu :dt))))
 
     (testing "opcode: FX18"
       (is (= 2 (-> cpu (cpu/opcode-FX18 1) :cpu :pc)))
-      (is (= 1 (-> cpu (cpu/opcode-FX18 0) :cpu :sound-timer))))
+      (is (= 1 (-> cpu (cpu/opcode-FX18 0) :cpu :st))))
 
     (testing "opcode: FX29"
       (is (= 2 (-> cpu (cpu/opcode-FX29 1) :cpu :pc)))
