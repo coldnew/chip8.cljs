@@ -1,6 +1,6 @@
-# emulator-chip8
+# chip8.cljs
 
-A Clojure library designed to ... well, that part is up to you.
+CHIP-8 emulator written in clojurescript.
 
 ## Usage
 
@@ -8,7 +8,7 @@ FIXME
 
 ## License
 
-Copyright © 2015 FIXME
+Copyright © 2015 Yen-Chin, Lee <coldnew.tw@gmail.com>
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
