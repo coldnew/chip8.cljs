@@ -80,6 +80,10 @@
   [state st]
   (assoc-in state [:cpu :st] st))
 
+(defn- update-draw-flag
+  [state draw-flag]
+  (assoc-in state [:cpu :draw-flag] draw-flag))
+
 (defn- update-stack
   ([{{:keys [stack]} :cpu :as state} idx val]
    (update-stack state (assoc stack idx val)))
@@ -164,6 +168,7 @@
   (-> state
       (update-memory (vec rom) 0x200)))
 
+;; FIXME:
 (defn opcode-00E0
   "Clear the screen. This function will also set draw-flag to 1
   to make canvas function refresh."
@@ -171,7 +176,8 @@
   (-> state
       (assoc :screen (screen/make-screen))
       (assoc-in [:cpu :draw-flag] 1)
-      (assoc-in [:cpu :pc] 2)))
+      (update-draw-flag 1)
+      (update-pc 2)))
 
 (defn opcode-00EE
   "Return from a subroutine."
