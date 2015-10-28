@@ -55,8 +55,8 @@
    (int (/ (mod val 100) 10))
    (int (mod val 10))])
 
-(defn- VxVy [V x y]
-  [(nth V x) (nth V y)])
+(defn- VxVy [V X Y]
+  [(nth V X) (nth V Y)])
 
 (defn- write-pc
   [state pc]
@@ -95,8 +95,8 @@
    (assoc-in state [:memory] memory)))
 
 (defn- write-v
-  ([{:keys [v] :as state} x val]
-   (write-v state (assoc v x val)))
+  ([{:keys [v] :as state} X val]
+   (write-v state (assoc v X val)))
   ([{:keys [v] :as state} val]
    (assoc-in state [:v] (assoc-in-range v val))))
 
@@ -193,31 +193,31 @@
 
 (defn opcode-1NNN
   "Jump to address NNN."
-  [state nnn]
+  [state NNN]
   (-> state
-      (write-pc nnn)))
+      (write-pc NNN)))
 
 (defn opcode-2NNN
   "Call subroutine at nnn."
-  [{:keys [pc sp stack] :as state} nnn]
+  [{:keys [pc sp stack] :as state} NNN]
   (-> state
       (write-stack sp pc)
       (write-sp (inc pc))
-      (write-pc nnn)))
+      (write-pc NNN)))
 
 (defn opcode-3XNN
   "Skip next instruction if VX = NN."
-  [{:keys [v] :as state} x nn]
-  (let [Vx (nth v x)]
+  [{:keys [v] :as state} X NN]
+  (let [Vx (nth v X)]
     (-> state
-        (write-pc (if (= Vx nn) 4 2)))))
+        (write-pc (if (= Vx NN) 4 2)))))
 
 (defn opcode-4XNN
   "Skip next instruction if VX != NN."
-  [{:keys [v] :as state} x nn]
-  (let [Vx (nth v x)]
+  [{:keys [v] :as state} X NN]
+  (let [Vx (nth v X)]
     (-> state
-        (write-pc (if-not (= Vx nn) 4 2)))))
+        (write-pc (if-not (= Vx NN) 4 2)))))
 
 (defn opcode-5XY0
   "Skip next instruction if Vx = Vy."
@@ -228,124 +228,124 @@
 
 (defn opcode-6XNN
   "Set Vx to NN."
-  [state x nn]
+  [state X NN]
   (-> state
-      (write-v x nn)
+      (write-v X NN)
       (write-pc 2)))
 
 (defn opcode-7XNN
   "Set Vx = Vx + NN."
-  [{:keys [v] :as state} x nn]
-  (let [Vx (bit-and (+ (nth v x) nn) 0xff)]
+  [{:keys [v] :as state} X NN]
+  (let [Vx (bit-and (+ (nth v X) NN) 0xff)]
     (-> state
-        (write-v x Vx)
+        (write-v X Vx)
         (write-pc 2))))
 
 (defn opcode-8XY0
   "Set Vx = Vy."
-  [{:keys [v] :as state} x y]
-  (let [Vy (nth v y)]
+  [{:keys [v] :as state} X Y]
+  (let [Vy (nth v Y)]
     (-> state
-        (write-v  x Vy)
+        (write-v  X Vy)
         (write-pc 2))))
 
 (defn opcode-8XY1
   "Set Vx = Vx OR Vy."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)]
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-v  x (bit-or Vx Vy))
+        (write-v  X (bit-or Vx Vy))
         (write-pc 2))))
 
 (defn opcode-8XY2
   "Set Vx = Vx AND Vy."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)]
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-v  x (bit-and Vx Vy))
+        (write-v  X (bit-and Vx Vy))
         (write-pc 2))))
 
 (defn opcode-8XY3
   "Set Vx = Vx XOR Vy."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)]
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-v  x (bit-xor Vx Vy))
+        (write-v  X (bit-xor Vx Vy))
         (write-pc 2))))
 
 (defn opcode-8XY4
   "Set Vx = Vx + Vy, set VF = carry."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)
         sum (+ Vx Vy)]
     (-> state
-        (write-v  x (if (> sum 0xff) (- sum 256) sum))
+        (write-v  X (if (> sum 0xff) (- sum 256) sum))
         (write-v 15 (if (> sum 0xff) 1 0))
         (write-pc 2))))
 
 (defn opcode-8XY5
   "Set Vx = Vx - Vy, set VF = NOT borrow."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)
         sub (- Vx Vy)]
     (-> state
-        (write-v  x (if (< sub 0) (+ sub 256) sub))
+        (write-v  X (if (< sub 0) (+ sub 256) sub))
         (write-v 15 (if (< sub 0) 1 0))
         (write-pc 2))))
 
 (defn opcode-8XY6
   "Set Vx = Vx SHR 1."
-  [{:keys [v] :as state} x]
-  (let [Vx (nth v x)]
+  [{:keys [v] :as state} X]
+  (let [Vx (nth v X)]
     (-> state
         (write-v 15 (bit-and Vx 0x01))
-        (write-v  x (bit-shift-right Vx 1))
+        (write-v  X (bit-shift-right Vx 1))
         (write-pc 2))))
 
 (defn opcode-8XY7
   "Set Vx = Vy - Vx, set VF = NOT borrow."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)]
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v 15 (if (> Vx Vy) 0 1))
-        (write-v  x (- Vy Vx))
+        (write-v  X (- Vy Vx))
         (write-pc 2))))
 
 (defn opcode-8XYE
   "Set Vx = Vx SHL 1."
-  [{:keys [v] :as state} x]
-  (let [Vx (nth v x)]
+  [{:keys [v] :as state} X]
+  (let [Vx (nth v X)]
     (-> state
         (write-v 15 (bit-and Vx 0x80))
-        (write-v  x (bit-shift-left Vx 1))
+        (write-v  X (bit-shift-left Vx 1))
         (write-pc 2))))
 
 (defn opcode-9XY0
   "Skip next instruction if Vx != Vy."
-  [{:keys [v] :as state} x y]
-  (let [[Vx Vy] (VxVy v x y)]
+  [{:keys [v] :as state} X Y]
+  (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-pc (if-not (= Vx Vy) 4 2)))))
 
 (defn opcode-ANNN
   "Set I = NNN."
-  [state nnn]
+  [state NNN]
   (-> state
-      (write-i nnn)
+      (write-i NNN)
       (write-pc 2)))
 
 (defn opcode-BNNN
-  "Jump to location nnn + V0"
-  [{:keys [v] :as state} nnn]
+  "Jump to location NNN + V0"
+  [{:keys [v] :as state} NNN]
   (let [V0 (nth v 0)]
     (-> state
-        (write-pc (+ V0 nnn)))))
+        (write-pc (+ V0 NNN)))))
 
 (defn opcode-CXNN
   "Set Vx = random byte AND NN"
-  [{:keys [v] :as state} x nn]
+  [{:keys [v] :as state} X NN]
   (-> state
-      (write-v x (bit-and (rand-int 256) nn))
+      (write-v X (bit-and (rand-int 256) NN))
       (write-pc 2)))
 
 ;; FIXME:
@@ -388,17 +388,17 @@
 
 (defn opcode-FX07
   "Set Vx = delay timer value."
-  [{:keys [v dt] :as state} x]
+  [{:keys [v dt] :as state} X]
   (-> state
-      (write-v x dt)
+      (write-v X dt)
       (write-pc 2)))
 
 ;; TODO: Fx0A
 
 (defn opcode-FX15
   "Set delay timer = Vx."
-  [{:keys [v] :as state} x]
-  (let [Vx (nth v x)]
+  [{:keys [v] :as state} X]
+  (let [Vx (nth v X)]
     (-> state
         (write-dt Vx)
         (write-pc 2))))
@@ -429,9 +429,9 @@
 
 (defn opcode-FX55
   "Store registers V0 through Vx in memory starting at location I."
-  [{:keys [i v memory] :as state} x]
+  [{:keys [i v memory] :as state} X]
   (-> state
-      (write-memory (get-in-range v 0 (inc x)) i)
+      (write-memory (get-in-range v 0 (inc X)) i)
       (write-pc 2)))
 
 (defn opcode-FX65
@@ -443,8 +443,8 @@
 
 (defn opcode-FX1E
   "Set I = I + Vx."
-  [{:keys [i v] :as state} x]
-  (let [Vx (nth v x)]
+  [{:keys [i v] :as state} X]
+  (let [Vx (nth v X)]
     (-> state
         (write-i (+ i Vx))
         (write-pc 2))))
