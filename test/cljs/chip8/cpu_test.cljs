@@ -5,7 +5,7 @@
             [chip8.screen :as screen]))
 
 (deftest cpu-test
-  (let [cpu (:cpu (cpu/make-vm))
+  (let [cpu (cpu/make-vm)
         memory (:memory cpu)]
 
     (testing "memory"
@@ -19,7 +19,6 @@
              (cpu/get-in-range
               (-> (cpu/make-vm)
                   (cpu/load-rom [1 2 3 4])
-                  :cpu
                   :memory)
               0x200 0x204))))
 
@@ -49,129 +48,130 @@
     ))
 
 (deftest opcode-test
-  (let [cpu (-> (cpu/make-vm)
-                (assoc-in [:cpu :i] 5)
-                (assoc-in [:cpu :v] [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff])
-                (cpu/load-rom [0xff 0xae 5 6 7 8 9 0xff 0xaa])
-                )]
+  (let [cpu
+        (-> (cpu/make-vm)
+            (assoc-in [:i] 5)
+            (assoc-in [:v] [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff])
+            (cpu/load-rom [0xff 0xae 5 6 7 8 9 0xff 0xaa])
+            )
+        ]
 
     (testing "opcode: 00E0"
       (let [res  (-> cpu cpu/opcode-00E0)]
-        (is (= 2 (-> res :cpu :pc)))
-        (is (= 1 (-> res :cpu :draw-flag)))
+        (is (= 2 (-> res :pc)))
+        (is (= 1 (-> res :draw-flag)))
         (is (= (screen/make-screen) (-> res :screen)))))
 
     (testing "opcode: 1NNN"
       (let [addr 123
             res  (-> cpu (cpu/opcode-1NNN addr))]
-        (is (= addr (-> res :cpu :pc)))))
+        (is (= addr (-> res :pc)))))
 
     (testing "opcode: 3XNN"
-      (is (= 4 (-> cpu (cpu/opcode-3XNN 4 5) :cpu :pc)))
-      (is (= 2 (-> cpu (cpu/opcode-3XNN 4 1) :cpu :pc)))
-      (is (= 4 (-> cpu (cpu/opcode-3XNN 0xf 0xff) :cpu :pc))))
+      (is (= 4 (-> cpu (cpu/opcode-3XNN 4 5) :pc)))
+      (is (= 2 (-> cpu (cpu/opcode-3XNN 4 1) :pc)))
+      (is (= 4 (-> cpu (cpu/opcode-3XNN 0xf 0xff) :pc))))
 
     (testing "opcode: 4XNN"
-      (is (= 4 (-> cpu (cpu/opcode-4XNN 4 1) :cpu :pc)))
-      (is (= 2 (-> cpu (cpu/opcode-4XNN 4 5) :cpu :pc))))
+      (is (= 4 (-> cpu (cpu/opcode-4XNN 4 1) :pc)))
+      (is (= 2 (-> cpu (cpu/opcode-4XNN 4 5) :pc))))
 
     (testing "opcode: 5XY0"
-      (is (= 4 (-> cpu (cpu/opcode-5XY0 4 5) :cpu :pc)))
-      (is (= 2 (-> cpu (cpu/opcode-5XY0 4 1) :cpu :pc))))
+      (is (= 4 (-> cpu (cpu/opcode-5XY0 4 5) :pc)))
+      (is (= 2 (-> cpu (cpu/opcode-5XY0 4 1) :pc))))
 
     (testing "opcode: 6XNN"
-      (is (= 52 (-> cpu (cpu/opcode-6XNN 5 52) :cpu :v (nth 5))))
-      (is (= 13 (-> cpu (cpu/opcode-6XNN 2 13) :cpu :v (nth 2))))
-      (is (= 2  (-> cpu (cpu/opcode-6XNN 2 3) :cpu :pc))))
+      (is (= 52 (-> cpu (cpu/opcode-6XNN 5 52) :v (nth 5))))
+      (is (= 13 (-> cpu (cpu/opcode-6XNN 2 13) :v (nth 2))))
+      (is (= 2  (-> cpu (cpu/opcode-6XNN 2 3)  :pc))))
 
     (testing "opcode: 7XNN"
-      (is (= 54 (-> cpu (cpu/opcode-7XNN 1 52) :cpu :v (nth 1))))
-      (is (= 16 (-> cpu (cpu/opcode-7XNN 2 13) :cpu :v (nth 2))))
-      (is (= 2  (-> cpu (cpu/opcode-7XNN 2 3) :cpu :pc))))
+      (is (= 54 (-> cpu (cpu/opcode-7XNN 1 52) :v (nth 1))))
+      (is (= 16 (-> cpu (cpu/opcode-7XNN 2 13) :v (nth 2))))
+      (is (= 2  (-> cpu (cpu/opcode-7XNN 2 3)  :pc))))
 
     (testing "opcode: 8XY0"
-      (is (= 3 (-> cpu (cpu/opcode-8XY0 1 2) :cpu :v (nth 1))))
-      (is (= 5 (-> cpu (cpu/opcode-8XY0 2 5) :cpu :v (nth 2))))
-      (is (= 2 (-> cpu (cpu/opcode-8XY0 2 3) :cpu :pc))))
+      (is (= 3 (-> cpu (cpu/opcode-8XY0 1 2)  :v (nth 1))))
+      (is (= 5 (-> cpu (cpu/opcode-8XY0 2 5)  :v (nth 2))))
+      (is (= 2 (-> cpu (cpu/opcode-8XY0 2 3)  :pc))))
 
     (testing "opcode: 8XY1"
-      (is (= (bit-or 2 3) (-> cpu (cpu/opcode-8XY1 1 2) :cpu :v (nth 1))))
-      (is (= (bit-or 3 4) (-> cpu (cpu/opcode-8XY1 2 3) :cpu :v (nth 2))))
-      (is (= 2 (-> cpu (cpu/opcode-8XY1 2 3) :cpu :pc))))
+      (is (= (bit-or 2 3) (-> cpu (cpu/opcode-8XY1 1 2) :v (nth 1))))
+      (is (= (bit-or 3 4) (-> cpu (cpu/opcode-8XY1 2 3) :v (nth 2))))
+      (is (= 2 (-> cpu (cpu/opcode-8XY1 2 3) :pc))))
 
     (testing "opcode: 8XY2"
-      (is (= (bit-and 2 3) (-> cpu (cpu/opcode-8XY2 1 2) :cpu :v (nth 1))))
-      (is (= (bit-and 3 4) (-> cpu (cpu/opcode-8XY2 2 3) :cpu :v (nth 2))))
-      (is (= 2 (-> cpu (cpu/opcode-8XY2 2 3) :cpu :pc))))
+      (is (= (bit-and 2 3) (-> cpu (cpu/opcode-8XY2 1 2) :v (nth 1))))
+      (is (= (bit-and 3 4) (-> cpu (cpu/opcode-8XY2 2 3) :v (nth 2))))
+      (is (= 2 (-> cpu (cpu/opcode-8XY2 2 3) :pc))))
 
     (testing "opcode: 8XY3"
-      (is (= (bit-xor 2 3) (-> cpu (cpu/opcode-8XY3 1 2) :cpu :v (nth 1))))
-      (is (= (bit-xor 3 4) (-> cpu (cpu/opcode-8XY3 2 3) :cpu :v (nth 2))))
-      (is (= 2 (-> cpu (cpu/opcode-8XY3 2 3) :cpu :pc))))
+      (is (= (bit-xor 2 3) (-> cpu (cpu/opcode-8XY3 1 2) :v (nth 1))))
+      (is (= (bit-xor 3 4) (-> cpu (cpu/opcode-8XY3 2 3) :v (nth 2))))
+      (is (= 2 (-> cpu (cpu/opcode-8XY3 2 3) :pc))))
 
     (testing "opcode: 8XY4"
-      (is (= 9 (-> cpu (cpu/opcode-8XY4 3 4) :cpu :v (nth 3))))
-      (is (= 0 (-> cpu (cpu/opcode-8XY4 3 4) :cpu :v (nth 0xF))))
-      (is (= 5 (-> cpu (cpu/opcode-8XY4 14 15) :cpu :v (nth 4))))
-      (is (= 1 (-> cpu (cpu/opcode-8XY4 14 15) :cpu :v (nth 0xF))))
-      (is (= 0 (-> cpu (cpu/opcode-8XY4 0 1) :cpu :v (nth 0xF)))))
+      (is (= 9 (-> cpu (cpu/opcode-8XY4 3 4) :v (nth 3))))
+      (is (= 0 (-> cpu (cpu/opcode-8XY4 3 4) :v (nth 0xF))))
+      (is (= 5 (-> cpu (cpu/opcode-8XY4 14 15) :v (nth 4))))
+      (is (= 1 (-> cpu (cpu/opcode-8XY4 14 15) :v (nth 0xF))))
+      (is (= 0 (-> cpu (cpu/opcode-8XY4 0 1)  :v (nth 0xF)))))
 
-
-
+    ;; FIXME: rewrite
 
     (testing "opcode: FX07"
-      (is (= 2 (-> cpu (cpu/opcode-FX07 1) :cpu :pc)))
-      (is (= 0 (-> cpu (cpu/opcode-FX07 0) :cpu :v (nth 0))))
-      (is (= 5 (-> cpu (assoc-in [:cpu :dt] 5)
-                   (cpu/opcode-FX07 0) :cpu :v (nth 0)))))
+      (is (= 2 (-> cpu (cpu/opcode-FX07 1) :pc)))
+      (is (= 0 (-> cpu (cpu/opcode-FX07 0) :v (nth 0))))
+      (is (= 5 (-> cpu (assoc-in [:dt] 5)
+                   (cpu/opcode-FX07 0)  :v (nth 0)))))
 
     ;; TODO: FX0A
 
 
     (testing "opcode: FX15"
-      (is (= 2 (-> cpu (cpu/opcode-FX15 1) :cpu :pc)))
-      (is (= 1 (-> cpu (cpu/opcode-FX15 0) :cpu :dt))))
+      (is (= 2 (-> cpu (cpu/opcode-FX15 1) :pc)))
+      (is (= 1 (-> cpu (cpu/opcode-FX15 0) :dt))))
 
     (testing "opcode: FX18"
-      (is (= 2 (-> cpu (cpu/opcode-FX18 1) :cpu :pc)))
-      (is (= 1 (-> cpu (cpu/opcode-FX18 0) :cpu :st))))
+      (is (= 2 (-> cpu (cpu/opcode-FX18 1)  :pc)))
+      (is (= 1 (-> cpu (cpu/opcode-FX18 0)  :st))))
 
     (testing "opcode: FX29"
-      (is (= 2 (-> cpu (cpu/opcode-FX29 1) :cpu :pc)))
-      (is (= 10 (-> cpu (cpu/opcode-FX29 1) :cpu :i)))
-      (is (= 5  (-> cpu (cpu/opcode-FX29 0) :cpu :i))))
+      (is (= 2 (-> cpu (cpu/opcode-FX29 1)  :pc)))
+      (is (= 10 (-> cpu (cpu/opcode-FX29 1) :i)))
+      (is (= 5  (-> cpu (cpu/opcode-FX29 0) :i))))
 
     (testing "opcode: FX33"
-      (is (= 2 (-> cpu (cpu/opcode-FX33 1) :cpu :pc)))
-      (is (= [0 0 3] (take 3 (-> cpu (assoc-in [:cpu :i] 0)
+      (is (= 2 (-> cpu (cpu/opcode-FX33 1) :pc)))
+      (is (= [0 0 3] (take 3 (-> cpu (assoc-in [:i] 0)
                                  (cpu/opcode-FX33 2)
-                                 :cpu :memory))))
+                                 :memory))))
 
-      (is (= [2 5 5] (take 3 (-> cpu (assoc-in [:cpu :i] 0)
+      (is (= [2 5 5] (take 3 (-> cpu (assoc-in [:i] 0)
                                  (cpu/opcode-FX33 15)
-                                 :cpu :memory)))))
+                                 :memory)))))
 
     (testing "opcode: FX55"
-      (is (= 16  (-> cpu (cpu/opcode-FX55 1) :cpu :v count)))
+      (is (= 16  (-> cpu (cpu/opcode-FX55 1) :v count)))
       (is (= [1 2 3 4 5]
              (take 5 (-> cpu
-                         (assoc-in [:cpu :i] 0)
-                         (cpu/opcode-FX55 5) :cpu :memory))))
+                         (assoc-in [:i] 0)
+                         (cpu/opcode-FX55 5) :memory))))
       (is (= [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff]
              (take 16 (-> cpu
-                          (assoc-in [:cpu :i] 0)
-                          (cpu/opcode-FX55 15) :cpu :memory)))))
+                          (assoc-in [:i] 0)
+                          (cpu/opcode-FX55 15) :memory)))))
 
     (testing "opcode: FX65"
-      (is (= 16  (-> cpu (cpu/opcode-FX65 1) :cpu :v count)))
+      (is (= 16  (-> cpu (cpu/opcode-FX65 1) :v count)))
       (is (= [0xff 0xae]  (take 2 (-> cpu
-                                      (assoc-in [:cpu :i] 0x200)
-                                      (cpu/opcode-FX65 1) :cpu :v))))
+                                      (assoc-in [:i] 0x200)
+                                      (cpu/opcode-FX65 1) :v))))
       (is (= [0xff 0xae 5 6 7 8 9 0xff 0xaa]
-             (take 9 (-> cpu (assoc-in [:cpu :i] 0x200)
-                         (cpu/opcode-FX65 9) :cpu :v)))))
+             (take 9 (-> cpu (assoc-in [:i] 0x200)
+                         (cpu/opcode-FX65 9) :v)))))
 
     (testing "opcode: FX1E"
-      (is (= 8 (-> cpu (cpu/opcode-FX1E 2) :cpu :i)))
-      (is (= 15 (-> cpu (cpu/opcode-FX1E 9) :cpu :i))))
+      (is (= 8 (-> cpu (cpu/opcode-FX1E 2) :i)))
+      (is (= 15 (-> cpu (cpu/opcode-FX1E 9) :i))))
     ))
