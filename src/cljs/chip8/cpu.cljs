@@ -1,6 +1,7 @@
 (ns chip8.cpu
   (:require [chip8.screen :as screen]
-            [chip8.keyboard :as keyboard]))
+            [chip8.keyboard :as keyboard]
+            [cljs.core.match :refer-macros [match]]))
 
 (def fonts
   [0xF0 0x90 0x90 0x90 0xF0 ; 0
@@ -34,29 +35,11 @@
   "Update arr with val from start."
   ([arr val] (assoc-in-range arr val 0))
   ([arr val start-or-range]
-   ;; (if (sequential? start-or-range)
-   ;;   (reduce #(assoc-in %1 [%2] (nth val %2)) arr start-or-range)
-   ;;   (let [start start-or-range
-   ;;         end (+ start (count val))]
-   ;;     (assoc-in-range arr val (range start end))))))
- (let [bound (range (count val))
-       start start-or-range]
-   (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound))))
-
-(defn- aa
-  [arr val rge]
-  (reduce #(assoc-in arr [%2] (nth val %2)) '() rge))
-
-;;(aa [1 2 3 4 5] [6 7 8 9] [10 11 12])
-
-;; => (aa [1 2 3 4 5] [6 7 8 9] [1 2 3])
-
-(defn- bb
-  [arr val start]
-  (let [bound (range (count val))]
-    (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound)))
-
-(bb [1 2 3 4 5] [6 7 8] 2)
+   (if (sequential? start-or-range)
+     (reduce #(assoc-in %1 [%2] (nth val %2)) arr start-or-range)
+     (let [bound (range (count val))
+           start start-or-range]
+       (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound)))))
 
 (defn- get-in-range
   "Get arr from start to end."
@@ -74,7 +57,6 @@
 
 (defn- VxVy [V x y]
   [(nth V x) (nth V y)])
-
 
 (defn- write-pc
   [state pc]
@@ -168,6 +150,11 @@
    ;; update the canvas.
    :draw-flag 0
 
+   ;; FIXME:
+   :timer {:delay 0
+           :sound 0}
+
+   :screen (screen/make-screen)
    })
 
 ;;;; CPU States
@@ -182,6 +169,7 @@
    }
   )
 
+
 (defn load-rom
   "Load rom to memory. The program will be loaded start at 0x200."
   [state rom]
@@ -195,7 +183,6 @@
   [state]
   (-> state
       (assoc :screen (screen/make-screen))
-      (assoc-in [:cpu :draw-flag] 1)
       (write-draw-flag 1)
       (write-pc 2)))
 
@@ -401,63 +388,6 @@
         (write-draw-flag 1)
         (write-pc 2))))
 
-;; (:memory
-;;  (:screen
-;;   ((fn [state]
-;;      (binding [s state]
-;;        ;; (for [y (range 4)
-;;        ;;       x (range 8)]
-;;        ;;   (set! s (screen/set-pixel s  x y 1))
-;;        ;;   )
-;;        (doseq [y (range 4)
-;;                x (range 8)]
-;;          (set! s (screen/set-pixel s  x y))
-;;          )
-;;        s
-;;        ))
-;;    (make-vm))
-;;   )
-;;  )
-
-;; (:memory (:screen
-;;           (-> (make-vm)
-;;               (screen/set-pixel 0 0)
-;;               (screen/set-pixel 0 1)
-;;               )
-;;           ))
-
-;; (binding [z 0]
-;;   (doseq [x (range 4)
-;;           y (range 4)]
-;;     (set! z [x y]))
-;;   z)
-
-
-;; (binding [z 0]
-;;   (dorun
-;;    (for [x (range 4) y (range 4)]
-;;      (set! z [x y])))
-;;   z)
-
-;;(map (fn [x y] (assoc-in )))
-
-;; (assoc [1 2 3] [4] 5)
-
-;; (doseq [x (range 5) :let [a (1 + x)]
-;;         y (range 4)]
-;;   [x y a])
-
-;; (let [rows (range 5)
-;;       sprites (get-in-range memory (range i (+ i row)))
-;;       ]
-;;   sprites)
-
-;; (get-in-range [1 2 3 4 5 6] (range 3))
-
-;; TODO: Ex09E
-
-;; TODO: ExA1
-
 (defn opcode-FX07
   "Set Vx = delay timer value."
   [{{:keys [v dt]} :cpu :as state} x]
@@ -523,7 +453,7 @@
 
 (defn initial-vm [state]
 
-  (-> (make-vm)
+  (-> (make-cpu)
       ;; Initial screen canvas
       ;;    (screen/initial)
 
@@ -531,7 +461,7 @@
   )
 
 (comment
-  (-> (make-vm)
+  (-> (make-cpu)
       (screen/set-pixel 31 31)
       (screen/set-pixel 1 1)
       (screen/set-pixel 0 31)
@@ -542,4 +472,7 @@
       (screen/set-pixel 64 0)
       (screen/render)
       )
+
+  (:pc (-> (make-cpu)
+           (assoc :pc 2)))
   )
