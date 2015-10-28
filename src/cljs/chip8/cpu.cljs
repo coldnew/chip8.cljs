@@ -33,9 +33,30 @@
 (defn- assoc-in-range
   "Update arr with val from start."
   ([arr val] (assoc-in-range arr val 0))
-  ([arr val start]
-   (let [bound (range (count val))]
-     (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound))))
+  ([arr val start-or-range]
+   ;; (if (sequential? start-or-range)
+   ;;   (reduce #(assoc-in %1 [%2] (nth val %2)) arr start-or-range)
+   ;;   (let [start start-or-range
+   ;;         end (+ start (count val))]
+   ;;     (assoc-in-range arr val (range start end))))))
+ (let [bound (range (count val))
+       start start-or-range]
+   (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound))))
+
+(defn- aa
+  [arr val rge]
+  (reduce #(assoc-in arr [%2] (nth val %2)) '() rge))
+
+;;(aa [1 2 3 4 5] [6 7 8 9] [10 11 12])
+
+;; => (aa [1 2 3 4 5] [6 7 8 9] [1 2 3])
+
+(defn- bb
+  [arr val start]
+  (let [bound (range (count val))]
+    (reduce #(assoc-in %1 [(+ %2 start)] (nth val %2)) arr bound)))
+
+(bb [1 2 3 4 5] [6 7 8] 2)
 
 (defn- get-in-range
   "Get arr from start to end."
@@ -146,6 +167,7 @@
    ;; to update the canvas screen. If the flag not zero,
    ;; update the canvas.
    :draw-flag 0
+
    })
 
 ;;;; CPU States
@@ -368,28 +390,62 @@
         ;; (screen/set-piexl state (+ Vx col) (+ Vy row))
         ;; )
 
+        ;; (fn [state]
+        ;;   (binding [sta state]
+        ;;     (doseq [row (range height) col (range width)]
+
+        ;;     )
+        ;;   sta))
 
         ;; detect collision
         (write-draw-flag 1)
         (write-pc 2))))
 
-(:memory
- (:screen
-  ((fn [state]
-     (for [y (range 4)
-           x (range 8)]
-       ;;    [y x a]
-       (screen/set-pixel state  x y)
-       )
-     state
-     )
-   (make-vm))
-  )
- )
+;; (:memory
+;;  (:screen
+;;   ((fn [state]
+;;      (binding [s state]
+;;        ;; (for [y (range 4)
+;;        ;;       x (range 8)]
+;;        ;;   (set! s (screen/set-pixel s  x y 1))
+;;        ;;   )
+;;        (doseq [y (range 4)
+;;                x (range 8)]
+;;          (set! s (screen/set-pixel s  x y))
+;;          )
+;;        s
+;;        ))
+;;    (make-vm))
+;;   )
+;;  )
+
+;; (:memory (:screen
+;;           (-> (make-vm)
+;;               (screen/set-pixel 0 0)
+;;               (screen/set-pixel 0 1)
+;;               )
+;;           ))
+
+;; (binding [z 0]
+;;   (doseq [x (range 4)
+;;           y (range 4)]
+;;     (set! z [x y]))
+;;   z)
+
+
+;; (binding [z 0]
+;;   (dorun
+;;    (for [x (range 4) y (range 4)]
+;;      (set! z [x y])))
+;;   z)
 
 ;;(map (fn [x y] (assoc-in )))
 
-(assoc [1 2 3] [4] 5)
+;; (assoc [1 2 3] [4] 5)
+
+;; (doseq [x (range 5) :let [a (1 + x)]
+;;         y (range 4)]
+;;   [x y a])
 
 ;; (let [rows (range 5)
 ;;       sprites (get-in-range memory (range i (+ i row)))
@@ -469,20 +525,10 @@
 
   (-> (make-vm)
       ;; Initial screen canvas
-      (screen/initial)
+      ;;    (screen/initial)
 
       )
   )
-
-(defn aabb
-  [{{:keys [memory pc]} :cpu screen :screen :as state}]
-  ;;(let [{pc :pc memory :memory} cpu]
-  memory
-  ;;  )
-  )
-
-(aabb (make-vm))
-
 
 (comment
   (-> (make-vm)

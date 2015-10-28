@@ -16,10 +16,8 @@
 (def app-state (atom
                 {:rom    {:id "rom_selector"
                           :name ""}
-                 :screen {:id "canvas"}
-                 :cpu    (cpu/make-cpu)
+                 :cpu    (cpu/make-vm)
                  }))
-
 
 ;; # Load rom event
 ;;
@@ -50,7 +48,9 @@
   (.log js/console "-->")
 
   ;; Initial cpu state
-  (cpu/initial-vm app-state)
+  ;;  (cpu/initial-vm app-state)
+
+  (screen/initial (:cpu @app-state))
 
   ;; Track when user select another rom
   (.addEventListener
@@ -59,11 +59,11 @@
      (let [rom-name (.-target.value event)]
        ;; We only trigger the event when the
        ;; rom is member in rom/roms
-       (when (some #{rom-name} roms)
+       (when (some #{rom-name} rom/roms)
          ;; Display rom name for debug
          (.log js/console "Select rom: " rom-name)
 
- ;;        (screen/render @app-state)
+         ;;        (screen/render @app-state)
 
          ;; update rom-name in app-state
          (swap! app-state assoc-in [:rom] {:name rom-name})
@@ -75,7 +75,7 @@
          ;;(.blur (dom/getElement (:id (:rom @app-state))))
 
          ;; Make focus on canvas
- ;;        (.focus (screen/get-screen-canvas app-state))
+         ;;        (.focus (screen/get-screen-canvas app-state))
          )
        )
      ))

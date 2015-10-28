@@ -2,4 +2,5 @@
   (:require [chip8.ui.core :as ui]))
 
 ;; The real entry point is chip8.ui.coore.cljs
-(ui/main)
+(defn main []
+  (ui/main))
