@@ -348,14 +348,55 @@
   [{{:keys [v memory i]} :cpu :as state} X Y N]
   (let [width 8
         height (bit-and N 0x0F)
+        [Vx Vy] (VxVy state X Y)
         ]
+
     (-> state
         ;; clear VF before we start
         (write-v 0xf 0)
+        ;; calculate sprite
+        ;; (fn [state]
+        ;;   (for [row (range height) :let [sprite (nth memory (+ i row))]
+        ;;         col (range width)]
+        ;;     (if (> (bit-and sprite 0x80) 0)
+        ;;       (screen/set-piexl state (+ Vx col) (+ Vy row))
+        ;;       )
+        ;;     ))
+
+        ;; (for [row (range height) :let [sprite (nth memory (+ i row))]
+        ;;       col (range width)] :when (> (bit-and sprite 0x80) 0)]
+        ;; (screen/set-piexl state (+ Vx col) (+ Vy row))
+        ;; )
+
 
         ;; detect collision
         (write-draw-flag 1)
         (write-pc 2))))
+
+(:memory
+ (:screen
+  ((fn [state]
+     (for [y (range 4)
+           x (range 8)]
+       ;;    [y x a]
+       (screen/set-pixel state  x y)
+       )
+     state
+     )
+   (make-vm))
+  )
+ )
+
+;;(map (fn [x y] (assoc-in )))
+
+(assoc [1 2 3] [4] 5)
+
+;; (let [rows (range 5)
+;;       sprites (get-in-range memory (range i (+ i row)))
+;;       ]
+;;   sprites)
+
+;; (get-in-range [1 2 3 4 5 6] (range 3))
 
 ;; TODO: Ex09E
 

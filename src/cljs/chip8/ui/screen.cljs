@@ -1,4 +1,4 @@
-(ns chip8.screen
+(ns chip8.ui.screen
   (:require [goog.dom :as dom]))
 
 (defn- resize-canvas
@@ -33,29 +33,6 @@
         (< v 0)           (protect-region (+ v bound) bound)
         :else v))
 
-(defn set-pixel
-  "Set the pixel on screen according x, y.
-  Note that the pixel cooridinate is the same as CHIP-8 original
-  implementation."
-  [{{:keys [columns rows memory]} :screen :as state} x y & [val]]
-  (let [nx (protect-region x columns)
-        ny (protect-region y rows)
-        val-xor (bit-xor (get-in memory [nx ny]) 1)]
-    (-> state
-        (assoc-in [:screen :memory]
-                  (assoc-in memory [nx ny] (or val val-xor))))))
-
-(defn set-pixels
-  [{{:keys [columns rows memory]} :screen :as state} xs ys]
-  (let [nxs (map #(protect-region % columns) xs)
-        nys (map #(protect-region % rows)    ys)
-        ]
-      )
-  )
-
-;;(map #(protect-region % 5) [1 2 3 4 5 6] )
-
-
 (defn render
   "Render the canvas according to screen memory."
   [{{:keys [columns rows memory scale id]} :screen :as state}]
@@ -71,36 +48,3 @@
         (when-not (zero? (get-in memory [x y]))
           (.fillRect ctx (* x scale) (* y scale) scale scale)))))
   state)
-
-;; ## Screen setup
-;;
-;; The original implementation of the Chip-8 language used a
-;; 64x32-pixel monochrome display with this format:
-;;
-;;        +----------------------+
-;;        | (0,0)       (63,0)   |
-;;        | (0,31)      (63,31)  |
-;;        +----------------------+
-;;
-(defn make-screen
-  "Create the hashmap used by screen"
-  []
-  (let [rows    32
-        columns 64
-        scale   10]
-    {:id "canvas"
-     :rows rows
-     :columns columns
-     :scale scale
-     :memory (vec (repeat columns
-                          (vec (repeat rows 0))))
-     :collision 0
-     }))
-
-(defn initial
-  [state]
-  (-> state
-      ;; Initial Canvas and resize
-      resize-canvas
-      ;; Render data to canvas
-      (render)))
