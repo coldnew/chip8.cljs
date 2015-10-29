@@ -348,6 +348,31 @@
       (write-v X (bit-and (rand-int 256) NN))
       (write-pc 2)))
 
+
+(defn- protect-region
+  "Prevent v ovrflow on bound."
+  [v bound]
+  (cond (> v (dec bound)) (protect-region (- v bound) bound)
+        (< v 0)           (protect-region (+ v bound) bound)
+        :else v))
+
+(defn set-pixel
+  "Set the pixel on screen according x, y.
+  Note that the pixel cooridinate is the same as CHIP-8 original
+  implementation."
+  [{{:keys [columns rows memory]} :screen :as state} x y & [val]]
+  (let [nx (protect-region x columns)
+        ny (protect-region y rows)
+        v (get-in memory [nx ny])
+        val-xor (bit-xor v 1)]
+    (-> state
+        (assoc-in [:screen :memory]
+                  (assoc-in memory [nx ny] (or val val-xor)))
+        ((fn [state]
+           (if (= v 1)
+             (write-v state 0xf 1) state))))))
+
+
 ;; FIXME:
 (defn opcode-DXYN
   "Display n-byte sprite starting at memory location I at (Vx, Vy),
@@ -355,35 +380,24 @@
   [{:keys [v memory i] :as state} X Y N]
   (let [width 8
         height (bit-and N 0x0F)
-        [Vx Vy] (VxVy state X Y)
-        ]
+        [Vx Vy] (VxVy state X Y)]
 
     (-> state
         ;; clear VF before we start
         (write-v 0xf 0)
         ;; calculate sprite
-        ;; (fn [state]
-        ;;   (for [row (range height) :let [sprite (nth memory (+ i row))]
-        ;;         col (range width)]
-        ;;     (if (> (bit-and sprite 0x80) 0)
-        ;;       (screen/set-piexl state (+ Vx col) (+ Vy row))
-        ;;       )
-        ;;     ))
-
-        ;; (for [row (range height) :let [sprite (nth memory (+ i row))]
-        ;;       col (range width)] :when (> (bit-and sprite 0x80) 0)]
-        ;; (screen/set-piexl state (+ Vx col) (+ Vy row))
-        ;; )
-
-        ;; (fn [state]
-        ;;   (binding [sta state]
-        ;;     (doseq [row (range height) col (range width)]
-
-        ;;     )
-        ;;   sta))
-
-        ;; detect collision
-        (write-draw-flag 1)
+        ;; FIXME: dirty
+        ((fn [state]
+           (let [sprite (atom 0)
+                 s (atom state)]
+             (dotimes [row height]
+               (reset! sprite (nth memory (+ i row)))
+               (dotimes [col width]
+                 (when (> (bit-and @sprite 0x80) 0)
+                   (set-pixel @s (+ Vx col) (+ Vy row)))
+                 (reset! sprite (bit-and @sprite 0x80))))
+             ;; return state
+             @s)))
         (write-pc 2))))
 
 (defn opcode-FX07
@@ -393,7 +407,15 @@
       (write-v X dt)
       (write-pc 2)))
 
-;; TODO: Fx0A
+;; FIXME:
+;; (defn opcode-FX0A
+;;   " Wait for a key press, store the value of the key in Vx."
+;;   [{:keys [v] :as state} X]
+;;   (let [Vx (nth v X)]
+;;     (-> state
+;;         (write-dt Vx)
+;;         (write-pc 2))))
+
 
 (defn opcode-FX15
   "Set delay timer = Vx."
@@ -454,9 +476,19 @@
   (-> (make-cpu)
       ;; Initial screen canvas
       ;;    (screen/initial)
-
+      (set-pixel 31 31)
       )
   )
+
+(defn step [state]
+  (-> (make-cpu)
+       (set-pixel 31 31)
+       (set-pixel 1 1)
+        (set-pixel 0 31)
+        (set-pixel 31 0)
+      )
+  )
+
 
 (comment
   (-> (make-cpu)

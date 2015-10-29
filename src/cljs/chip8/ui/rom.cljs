@@ -14,19 +14,17 @@
 
 (defn- add-rom
   "Add rom to chooser ID"
-  [state rom]
+  [rom]
   (let [option (dom/createElement "option")]
     ;; (.log js/console rom)
     (set! (.-value option) rom)
     (set! (.-innerHTML option) rom)
-    (.appendChild rom-selector option))
-  state)
+    (.appendChild rom-selector option)))
 
 (defn update-rom-selector
-  [state]
+  []
   (doseq [r roms]
-    (add-rom state r))
-  state)
+    (add-rom r)))
 
 (defn on-select-event
   "Add Listener when rom is changed"
@@ -39,3 +37,8 @@
        ;; rom is member in rom/roms
        (when (some #{rom-name} roms)
          (load-rom-fn rom-name))))))
+
+
+(defn blur-rom-selector
+  []
+  (.blur rom-selector))

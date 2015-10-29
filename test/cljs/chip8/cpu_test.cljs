@@ -47,6 +47,15 @@
       (is (= [2 5 5] (cpu/->bcd 0xff))))
     ))
 
+(defn make-test-cpu
+  []
+  (-> (cpu/make-vm)
+      (assoc-in [:i] 5)
+      (assoc-in [:v] [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff])
+      (cpu/load-rom [0xff 0xae 5 6 7 8 9 0xff 0xaa])
+      ))
+
+
 (deftest opcode-test
   (let [cpu
         (-> (cpu/make-vm)
@@ -116,6 +125,23 @@
       (is (= 5 (-> cpu (cpu/opcode-8XY4 14 15) :v (nth 4))))
       (is (= 1 (-> cpu (cpu/opcode-8XY4 14 15) :v (nth 0xF))))
       (is (= 0 (-> cpu (cpu/opcode-8XY4 0 1)  :v (nth 0xF)))))
+
+
+    ;; (testing "opcode: DXYN"
+    ;;   (let [cpu (-> (make-test-cpu)
+    ;;                 (assoc-in [:i] 0)
+    ;;                 ((fn [state]
+    ;;                    (let [s (atom state)]
+    ;;                    (for [i 16 j 16 :let [k (+ i j)]]
+    ;;                      (assoc)
+    ;;                      )
+    ;;                    @s)
+    ;;                    )
+    ;;                  )
+    ;;                 )
+    ;;         ])
+
+    ;;   )
 
     ;; FIXME: rewrite
 

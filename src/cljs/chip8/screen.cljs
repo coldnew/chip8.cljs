@@ -16,13 +16,11 @@
   (let [rows    32
         columns 64
         scale   10]
-    {:id "canvas"
-     :rows rows
+    {:rows rows
      :columns columns
      :scale scale
      :memory (vec (repeat columns
                           (vec (repeat rows 0))))
-     :collision 0
      }))
 
 (defn- protect-region
@@ -39,7 +37,8 @@
   [{{:keys [columns rows memory]} :screen :as state} x y & [val]]
   (let [nx (protect-region x columns)
         ny (protect-region y rows)
-        val-xor (bit-xor (get-in memory [nx ny]) 1)]
+        v (get-in memory [nx ny])
+        val-xor (bit-xor v 1)]
     (-> state
         (assoc-in [:screen :memory]
                   (assoc-in memory [nx ny] (or val val-xor))))))

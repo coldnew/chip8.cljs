@@ -41,6 +41,10 @@
         (.fillRect ctx (* x scale) (* y scale) scale scale))))
   state)
 
+(defn focus-canvas
+  []
+  (.focus canvas))
+
 
 (defn initial
   [state]
