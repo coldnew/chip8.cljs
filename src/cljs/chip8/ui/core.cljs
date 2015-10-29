@@ -31,6 +31,12 @@
 
 ;;(:memory @app-state)
 
+;; make native arrays sequable
+;; ref: https://groups.google.com/forum/#!topic/clojurescript/bMoFWh7VYGg
+(extend-protocol ISeqable
+  js/Uint8Array
+  (-seq [array] (array-seq array 0)))
+
 ;; # Load rom event
 ;;
 ;; This function define the chip8 cpu action when user
@@ -45,7 +51,7 @@
 
                      (reset! app-state
                              (cpu/load-rom @app-state
-                                           (array-seq (js/Uint8Array. (.getResponse req)))))
+                                           (js/Uint8Array. (.getResponse req))))
 
                      ;; log data
                      ;; (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
