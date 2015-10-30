@@ -32,9 +32,9 @@
   ;; check if we need to stop emulator
   ;;(when ())
 
-      (reset! app-state (-> @app-state
-                          (cpu/step)
-                          (screen/render)))
+  (reset! app-state (-> @app-state
+                        (cpu/step)
+                        (screen/render)))
   (if (nil? @app-state)
     (stop-emulator-loop))
   )
@@ -71,13 +71,13 @@
                              (-> (cpu/make-cpu)
                                  (cpu/load-rom (js/Uint8Array. (.getResponse req)))))
 
-;;                     (.log js/console (str "-->App-state: " (:memory @app-state)))
+                     ;;                     (.log js/console (str "-->App-state: " (:memory @app-state)))
                      ;; start the emulator
-;;                     (start-emulator-loop)
-;;(cpu/step @app-state)
+                     ;;                     (start-emulator-loop)
+                     ;;(cpu/step @app-state)
 
                      ;; log data
-                     ;; (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
+                     (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
                      ))
 
     (.send req (str "roms/" name) "GET")))
@@ -85,7 +85,7 @@
 (defn main []
 
   ;; Initial Rom Selector
-  (rom/update-rom-selector)
+  (rom/initial)
 
   ;; Initial screen
   (screen/initial @app-state)
@@ -104,7 +104,6 @@
      ;; Blur rom-selector
      ;; FIXME:
      ;;(.blur (dom/getElement (:id (:rom @app-state))))
-     (rom/blur-rom-selector)
      ;; Make focus on canvas
      ;;        (.focus (screen/get-screen-canvas app-state))
      (screen/focus-canvas)

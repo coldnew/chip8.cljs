@@ -2,7 +2,7 @@
   (:require [goog.dom :as dom]
             [goog.events :as events]))
 
-(def rom-selector (dom/getElement "rom_selector"))
+(def rom-selector (atom []))
 
 ;; These roms are locate at resource/publis/roms
 ;; which is collect from the internet
@@ -15,30 +15,35 @@
 (defn- add-rom
   "Add rom to chooser ID"
   [rom]
-  (let [option (dom/createElement "option")]
+  (let [selector (dom/getElement "rom_selector")
+        option (dom/createElement "option")]
     ;; (.log js/console rom)
     (set! (.-value option) rom)
     (set! (.-innerHTML option) rom)
-    (.appendChild rom-selector option)))
+    (.appendChild selector option)))
 
 (defn update-rom-selector
   []
   (doseq [r roms]
     (add-rom r)))
 
+(defn initial []
+  ;; update Rom Selector
+  (update-rom-selector)
+  ;; save selctor for listen change event
+  (reset! rom-selector
+          (-> (js/$ "select.dropdown")
+              (.dropdown))))
+
 (defn on-select-event
   "Add Listener when rom is changed"
   [load-rom-fn]
-  (.addEventListener
-   rom-selector "change"
-   (fn [event]
-     (let [rom-name (.-target.value event)]
-       ;; We only trigger the event when the
-       ;; rom is member in rom/roms
-       (when (some #{rom-name} roms)
-         (load-rom-fn rom-name))))))
-
-
-(defn blur-rom-selector
-  []
-  (.blur rom-selector))
+  (-> @rom-selector
+      (.on "change"
+           (fn [event]
+             (let [rom-name (.-target.value event)]
+               ;; We only trigger the event when the
+               ;; rom is member in rom/roms
+               (when (some #{rom-name} roms)
+                 (load-rom-fn rom-name)))))
+      ))
