@@ -18,7 +18,6 @@
         scale   10]
     {:rows rows
      :columns columns
-     :scale scale
      :memory (vec (repeat columns
                           (vec (repeat rows 0))))
      }))

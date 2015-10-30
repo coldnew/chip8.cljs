@@ -16,27 +16,35 @@
 
 (def request-animation-frame
   (reset! emulator-loop
-          (or (.-requestAnimationFrame js/window)
-              (.-webkitRequestAnimationFrame js/window)
-              (.-mozRequestAnimationFrame js/window)
-              (.-oRequestAnimationFrame js/window)
-              (.-msRequestAnimationFrame js/window)
-              (fn [callback] (js/setTimeout callback (/ 1000 60))))))
+          ;; (or (.-requestAnimationFrame js/window)
+          ;;     (.-webkitRequestAnimationFrame js/window)
+          ;;     (.-mozRequestAnimationFrame js/window)
+          ;;     (.-oRequestAnimationFrame js/window)
+          ;;     (.-msRequestAnimationFrame js/window)
+          ;;     (fn [callback] (js/setTimeout callback (/ 1000 60))))
+          (.-requestAnimationFrame js/window)
+          ))
+
 
 (defn stop-emulator-loop []
-  (js/cancelAnimationFrame @emulator-loop))
+  (.cancelAnimationFrame js/window @emulator-loop)
+  (reset! emulator-loop nil))
 
 (defn start-emulator-loop []
-  (request-animation-frame start-emulator-loop)
-
-  ;; check if we need to stop emulator
-  ;;(when ())
+  ;;(request-animation-frame start-emulator-loop)
+  (reset! emulator-loop (js/requestAnimationFrame start-emulator-loop))
 
   (reset! app-state (-> @app-state
                         (cpu/step)
                         (screen/render)))
-  (if (nil? @app-state)
-    (stop-emulator-loop))
+
+  (when-not (zero? (:STOP @app-state))
+    (.log js/console "STOP Machine")
+    ;;    (stop-emulator-loop)
+    (js/cancelAnimationFrame @emulator-loop)
+    (reset! emulator-loop nil)
+    )
+
   )
 
 ;; (let [{:keys [memory pc]} @app-state
@@ -73,14 +81,15 @@
 
                      ;;                     (.log js/console (str "-->App-state: " (:memory @app-state)))
                      ;; start the emulator
-                     ;;                     (start-emulator-loop)
+                     (start-emulator-loop)
                      ;;(cpu/step @app-state)
 
                      ;; log data
-                     (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
+                     ;;(.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
                      ))
 
-    (.send req (str "roms/" name) "GET")))
+    (.send req (str "roms/" name) "GET")
+    (.log js/console "Select rom: " name)))
 
 (defn main []
 
@@ -94,18 +103,21 @@
   (keyboard/initial)
 
   ;; Track when user select another rom
-  (rom/on-select-event
-   (fn [rom-name]
-     ;; Display rom name for debug
-     (.log js/console "Select rom: " rom-name)
+  ;; (rom/on-select-event
+  ;;  (fn [rom-name]
+  ;;    ;; Display rom name for debug
+  ;;    (.log js/console "Select rom: " rom-name)
 
-     (load-rom rom-name)
+  ;;    (load-rom rom-name)
 
-     ;; Blur rom-selector
-     ;; FIXME:
-     ;;(.blur (dom/getElement (:id (:rom @app-state))))
-     ;; Make focus on canvas
-     ;;        (.focus (screen/get-screen-canvas app-state))
-     (screen/focus-canvas)
+  ;;    ;; Blur rom-selector
+  ;;    ;; FIXME:
+  ;;    ;;(.blur (dom/getElement (:id (:rom @app-state))))
+  ;;    ;; Make focus on canvas
+  ;;    ;;        (.focus (screen/get-screen-canvas app-state))
+  ;;    (screen/focus-canvas)
 
-     )))
+  ;;    ))
+
+  (rom/on-select-event load-rom)
+  )

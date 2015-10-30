@@ -63,11 +63,9 @@
   [state key]
   (key state))
 
-
-
 (defn- write-pc
-  [state pc]
-  (assoc-in state [:pc] pc))
+  [{:keys [pc] :as state} val]
+  (assoc-in state [:pc] val))
 
 (defn- write-sp
   [state sp]
@@ -92,7 +90,6 @@
 (defn write-register
   [state key val]
   (assoc-in state [key] val))
-
 
 (defn- write-stack
   ([{:keys [stack] :as state} idx val]
@@ -168,36 +165,14 @@
            :sound 0}
 
    :screen (screen/make-screen)
+
+   :STOP 0
    })
 
 ;;;; CPU States
 
 (defn make-cpu []
   default-state)
-
-(defn make-vm
-  []
-  (make-cpu)
-  )
-
-;;; BLTIZ
-;; [18 23 66 76 73 84 90 32 66 121 32 68 97 118 105 100 32 87 73 78 84 69 82 163
-;; 65 96 4 97 9 98 14 103 4 208 30 242 30 112 12 48 64 18 33 240 10 0 224 34 217
-;; 240 10 0 224 142 112 163 30 107 31 204 31 140 196 220 178 63 1 18 73 220 178
-;; 18 57 202 7 122 1 123 254 220 178 122 255 58 0 18 77 126 255 62 0 18 57 107 0
-;; 140 112 109 0 110 0 163 27 221 227 63 0 18 193 59 0 18 129 96 5 224 158 18
-;; 135 107 1 136 208 120 2 137 224 121 3 163 30 216 145 129 240 96 5 240 21 240
-;; 7 48 0 18 139 59 1 18 171 163 30 49 1 216 145 121 1 57 32 18 171 107 0 49 0
-;; 124 255 76 0 18 187 163 27 221 227 125 2 61 64 18 185 109 0 126 1 18 101 0
-;; 224 119 2 18 45 163 27 221 227 96 20 97 2 98 11 163 32 208 27 242 30 112 8 48
-;; 44 18 205 18 215 96 10 97 13 98 5 163 7 208 21 242 30 112 8 48 42 18 225 128
-;; 112 112 254 128 6 163 135 240 51 242 101 96 45 241 41 97 13 208 21 112 5 242
-;; 41 208 21 0 238 131 130 131 130 251 232 8 136 5 226 190 160 184 32 62 128 128
-;; 128 128 248 128 248 252 192 192 249 129 219 203 251 0 250 138 154 153 248 239
-;; 42 232 41 41 0 111 104 46 76 143 190 160 184 176 190 0 190 34 62 52 178 216
-;; 216 0 195 195 0 216 216 0 195 195 0 216 216 192 192 0 192 192 0 192 192 0 192
-;; 192 0 219 219 219 219 0 24 24 0 24 24 0 24 24 0 219 219 219 219 0 24 24 0 24
-;; 24 0 24 24 0 24 24 219 219 0 3 3 0 24 24 0 192 192 0 219 219]
 
 (defn load-rom
   "Load rom to memory. The program will be loaded start at 0x200."
@@ -210,11 +185,11 @@
 (defn opcode-00E0
   "Clear the screen. This function will also set draw-flag to 1
   to make canvas function refresh."
-  [state]
+  [{:keys [pc] :as state}]
   (-> state
-      (assoc :screen (screen/make-screen))
+      (write-register :screen (screen/make-screen))
       (write-draw-flag 1)
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 (defn opcode-00EE
   "Return from a subroutine."
@@ -223,21 +198,17 @@
       (write-sp (dec sp))
       (write-pc (+ 2 (nth stack (dec sp))))))
 
-;; FIXME:
-(defn opcode-0NNN
-  "Return from a subroutine."
-  [{:keys [sp stack] :as state} NNN]
-  (-> state
-      (write-pc 2)))
-
 (defn opcode-1NNN
   "Jump to address NNN."
   [state NNN]
+  (.log js/console (str "NNN: " NNN))
   (-> state
       (write-pc NNN)))
 
 (defn opcode-2NNN
-  "Call subroutine at nnn."
+  "Call subroutine at NNN.
+  The interpreter increments the stack pointer, then puts the current PC on the
+  top of the stack. The PC is then set to NNN."
   [{:keys [pc sp stack] :as state} NNN]
   (-> state
       (write-stack sp pc)
@@ -245,133 +216,165 @@
       (write-pc NNN)))
 
 (defn opcode-3XNN
-  "Skip next instruction if VX = NN."
-  [{:keys [v] :as state} X NN]
+  "Skip next instruction if VX = NN.
+  The interpreter compares register Vx to kk, and if they are equal, increments
+  the program counter by 2."
+  [{:keys [pc v] :as state} X NN]
   (let [Vx (nth v X)]
     (-> state
-        (write-pc (if (= Vx NN) 4 2)))))
+        (write-pc (+ pc (if (= Vx NN) 4 2))))))
 
 (defn opcode-4XNN
-  "Skip next instruction if VX != NN."
-  [{:keys [v] :as state} X NN]
+  "Skip next instruction if VX != NN.
+  The interpreter compares register Vx to kk, and if they are not equal,
+  increments the program counter by 2."
+  [{:keys [pc v] :as state} X NN]
   (let [Vx (nth v X)]
     (-> state
-        (write-pc (if-not (= Vx NN) 4 2)))))
+        (write-pc (+ pc (if-not (= Vx NN) 4 2))))))
 
 (defn opcode-5XY0
-  "Skip next instruction if Vx = Vy."
-  [{:keys [v] :as state} X Y]
+  "Skip next instruction if Vx = Vy.
+  The interpreter compares register Vx to register Vy, and if they are equal,
+  increments the program counter by 2."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-pc (if (= Vx Vy) 4 2)))))
+        (write-pc (+ pc (if (= Vx Vy) 4 2))))))
 
 (defn opcode-6XNN
-  "Set Vx to NN."
-  [state X NN]
+  "Set Vx to NN.
+  The interpreter puts the value kk into register Vx."
+  [{:keys [pc] :as state} X NN]
   (-> state
       (write-v X NN)
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 (defn opcode-7XNN
-  "Set Vx = Vx + NN."
-  [{:keys [v] :as state} X NN]
-  (let [Vx (bit-and (+ (nth v X) NN) 0xff)]
+  "Set Vx = Vx + NN.
+  Adds the value kk to the value of register Vx, then stores the result in Vx."
+  [{:keys [pc v] :as state} X NN]
+  (let [Vx (nth v X)]
     (-> state
-        (write-v X Vx)
-        (write-pc 2))))
+        (write-v X (bit-and (+ Vx NN) 0xff))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY0
-  "Set Vx = Vy."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vy.
+  Stores the value of register Vy in register Vx."
+  [{:keys [pc v] :as state} X Y]
   (let [Vy (nth v Y)]
     (-> state
-        (write-v  X Vy)
-        (write-pc 2))))
+        (write-v X Vy)
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY1
-  "Set Vx = Vx OR Vy."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx OR Vy.
+  Performs a bitwise OR on the values of Vx and Vy, then stores the
+  result in Vx. A bitwise OR compares the corrseponding
+  bits from two values, and if either bit is 1, then the same bit
+  in the result is also 1. Otherwise, it is 0."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-or Vx Vy))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY2
-  "Set Vx = Vx AND Vy."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx AND Vy.
+  Performs a bitwise AND on the values of Vx and Vy, then stores
+  the result in Vx. A bitwise AND compares the corrseponding
+  bits from two values, and if both bits are 1, then the same
+  bit in the result is also 1. Otherwise, it is 0."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-and Vx Vy))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY3
-  "Set Vx = Vx XOR Vy."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx XOR Vy.
+  Performs a bitwise exclusive OR on the values of Vx and Vy, then
+  stores the result in Vx. An exclusive OR compares the
+  corrseponding bits from two values, and if the bits are not
+  both the same, then the corresponding bit in the result is set
+  to 1. Otherwise, it is 0."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-xor Vx Vy))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY4
-  "Set Vx = Vx + Vy, set VF = carry."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx + Vy, set VF = carry.
+  The values of Vx and Vy are added together. If the result is
+  greater than 8 bits (i.e., > 255,) VF is set to 1,
+  otherwise 0. Only the lowest 8 bits of the result are kept,
+  and stored in Vx."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)
         sum (+ Vx Vy)]
     (-> state
         (write-v  X (if (> sum 0xff) (- sum 256) sum))
         (write-v 15 (if (> sum 0xff) 1 0))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY5
-  "Set Vx = Vx - Vy, set VF = NOT borrow."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx - Vy, set VF = NOT borrow.
+  If Vx > Vy, then VF is set to 1, otherwise 0. Then Vy is
+  subtracted from Vx, and the results stored in Vx."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)
         sub (- Vx Vy)]
     (-> state
         (write-v  X (if (< sub 0) (+ sub 256) sub))
-        (write-v 15 (if (< sub 0) 1 0))
-        (write-pc 2))))
+        (write-v 15 (if (> sub 0) 1 0))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY6
-  "Set Vx = Vx SHR 1."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vx SHR 1.
+  If the least-significant bit of Vx is 1, then VF is set to 1,
+  otherwise 0. Then Vx is divided by 2."
+  [{:keys [pc v] :as state} X Y]
   (let [Vx (nth v X)]
     (-> state
         (write-v 15 (bit-and Vx 0x01))
         (write-v  X (bit-shift-right Vx 1))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XY7
-  "Set Vx = Vy - Vx, set VF = NOT borrow."
-  [{:keys [v] :as state} X Y]
+  "Set Vx = Vy - Vx, set VF = NOT borrow.
+  If Vy > Vx, then VF is set to 1, otherwise 0. Then Vx is
+  subtracted from Vy, and the results stored in Vx."
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v 15 (if (> Vx Vy) 0 1))
         (write-v  X (- Vy Vx))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-8XYE
   "Set Vx = Vx SHL 1."
-  [{:keys [v] :as state} X Y]
+  [{:keys [pc v] :as state} X Y]
   (let [Vx (nth v X)]
     (-> state
         (write-v 15 (bit-and Vx 0x80))
         (write-v  X (bit-shift-left Vx 1))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-9XY0
   "Skip next instruction if Vx != Vy."
-  [{:keys [v] :as state} X Y]
+  [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-pc (if-not (= Vx Vy) 4 2)))))
+        (write-pc (+ pc (if-not (= Vx Vy) 4 2))))))
 
 (defn opcode-ANNN
   "Set I = NNN."
-  [state NNN]
+  [{:keys [pc] :as state} NNN]
   (-> state
       (write-i NNN)
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 (defn opcode-BNNN
   "Jump to location NNN + V0"
@@ -382,10 +385,10 @@
 
 (defn opcode-CXNN
   "Set Vx = random byte AND NN"
-  [{:keys [v] :as state} X NN]
+  [{:keys [pc v] :as state} X NN]
   (-> state
       (write-v X (bit-and (rand-int 256) NN))
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 
 (defn- protect-region
@@ -411,15 +414,15 @@
            (if (= v 1)
              (write-v state 0xf 1) state))))))
 
-
 ;; FIXME:
 (defn opcode-DXYN
   "Display n-byte sprite starting at memory location I at (Vx, Vy),
   set VF = collision."
-  [{:keys [v memory i] :as state} X Y N]
-  (let [width 8
-        height (bit-and N 0x0F)
-        [Vx Vy] (VxVy state X Y)]
+  [{:keys [pc v i memory] :as state} X Y N]
+  (.log js/console (str "DXYN: X: " X " Y: " Y " N: " N))
+  (let [[Vx Vy] (VxVy v X Y)
+        width 8
+        height N]
 
     (-> state
         ;; clear VF before we start
@@ -433,18 +436,20 @@
                (reset! sprite (nth memory (+ i row)))
                (dotimes [col width]
                  (when (> (bit-and @sprite 0x80) 0)
-                   (set-pixel @s (+ Vx col) (+ Vy row)))
-                 (reset! sprite (bit-and @sprite 0x80))))
+                   (reset! s (set-pixel @s (+ Vx col) (+ Vy row))))
+                 (reset! sprite (bit-shift-left @sprite 1))))
              ;; return state
              @s)))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
+
+;;(nth [1 2 3] (inc 1))
 
 (defn opcode-FX07
   "Set Vx = delay timer value."
-  [{:keys [v dt] :as state} X]
+  [{:keys [pc v dt] :as state} X]
   (-> state
       (write-v X dt)
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 ;; FIXME:
 ;; (defn opcode-FX0A
@@ -458,88 +463,84 @@
 
 (defn opcode-FX15
   "Set delay timer = Vx."
-  [{:keys [v] :as state} X]
+  [{:keys [pc v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
         (write-dt Vx)
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-FX18
   "Set sound timer = Vx."
-  [{:keys [v] :as state} X]
+  [{:keys [pc v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
         (write-st Vx)
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-FX29
   "Set I = location of sprite for digit Vx."
-  [{:keys [v] :as state} X]
+  [{:keys [pc v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
         (write-i (* 5 Vx))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-FX33
   "Store BCD representation of Vx in memory locations I, I+1, I+2."
-  [{:keys [i v memory] :as state} X]
+  [{:keys [pc i v memory] :as state} X]
   (let [Vx (nth v X)]
     (-> state
         (write-memory (->bcd Vx) i)
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 (defn opcode-FX55
   "Store registers V0 through Vx in memory starting at location I."
-  [{:keys [i v memory] :as state} X]
+  [{:keys [pc i v memory] :as state} X]
   (-> state
       (write-memory (get-in-range v 0 (inc X)) i)
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 (defn opcode-FX65
   "Read registers V0 through Vx from memory starting at location I."
-  [{:keys [i v memory] :as state} X]
+  [{:keys [pc i v memory] :as state} X]
   (-> state
       (write-v (get-in-range memory i (+ i X 1)))
-      (write-pc 2)))
+      (write-pc (+ pc 2))))
 
 (defn opcode-FX1E
   "Set I = I + Vx."
-  [{:keys [i v] :as state} X]
+  [{:keys [pc i v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
         (write-i (+ i Vx))
-        (write-pc 2))))
+        (write-pc (+ pc 2)))))
 
 
 ;;(int (str "0x" "1" "e" ))
 
-(bit-or
- (bit-shift-left 18 8)
- 26)
 
-(bit-or
- (bit-shift-left 224 8)
- 162)
+;;(cl-format nil "~:@(~4,'0x~)" 0xf)
 
 (defn decoding
   [{:keys [memory pc] :as state}]
-;;  (.log js/console "opcode 1: " (nth memory pc))
-;;  (.log js/console "opcode 2: " (nth memory (inc pc)))
+  ;; (.log js/console "opcode 1: " (nth memory pc))
+  ;; (.log js/console "opcode 2: " (nth memory (inc pc)))
 
-  (let [opcode (bit-or (bit-shift-left (nth memory pc) 8)
-                       (nth memory (inc pc)))
-        [w x y z] (take-last 4 (seq (cl-format nil "~4,'0d" opcode)))
+  (.log js/console "opcode pc: " pc)
+
+  (let [opcode (+ (bit-shift-left (nth memory pc) 8)
+                  (nth memory (inc pc)))
+        [w x y z] (take-last 4 (seq (cl-format nil "~:@(~4,'0x~)" opcode)))
         NNN (int (str "0x" x y z))
         NN  (int (str "0x" y z))
         X   (int (str "0x" x))
         Y   (int (str "0x" y))
         N   (int (str "0x" z))]
 
-    (.log js/console (str "=> opcode: " (str "0x" w z y z)))
+    (.log js/console (str "=> opcode: " (str "0x" w x y z)))
     (match [ w   x   y   z ]
            ["0" "0" "E" "0"] (opcode-00E0 state)
            ["0" "0" "E" "E"] (opcode-00EE state)
-           ;;["0"  _   _   _ ] (opcode-0NNN state NNN)
            ["1"  _   _   _ ] (opcode-1NNN state NNN)
            ["2"  _   _   _ ] (opcode-2NNN state NNN)
            ["3"  _   _   _ ] (opcode-3XNN state X NN)
@@ -570,7 +571,11 @@
            ["F"  _  "6" "5"] (opcode-FX65 state X)
            ["F"  _  "1" "E"] (opcode-FX1E state X)
            ;;           :else (.log js/console (str "ERROR: no such opcode:" "0x" w x y z))
-           :else (throw (js/Error. (str "ERROR: no such opcode:" "0x" w x y z)))
+           :else ;;(do
+                   ;; Set STOP flag
+                   (throw (js/Error. (str "-->ERROR: no such opcode:" "0x" w x y z)))
+                   ;;(write-register state :STOP 1)
+                   ;;)
            )
     )
   )
@@ -582,15 +587,29 @@
 
 
 (comment
+
+  (-> (make-cpu)
+      (load-rom [0xA2 0x1E
+                 0xC2 0x01
+                 0x32 0x01
+                 0xA2 0x1A
+                 0xD0 0x14])
+      (decoding)
+      :pc
+      )
+
+
+
+  (.log js/console "adadasda")
+
   (-> (make-cpu)
       (screen/set-pixel 31 31)
       (screen/set-pixel 1 1)
-      (screen/set-pixel 0 31)
+
       (screen/set-pixel 31 0)
       (screen/set-pixel 33 0)
       (screen/set-pixel 63 0)
       (screen/set-pixel 63 31)
-      (screen/set-pixel 64 0)
       (screen/render)
       )
 

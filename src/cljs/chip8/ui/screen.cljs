@@ -4,13 +4,14 @@
 
 (def canvas (dom/getElement "canvas"))
 (def ctx (.getContext canvas "2d"))
+(def scale 10)
+
 
 (defn- resize-canvas
   "Get canvas element by id and resize canvas."
   [{screen :screen :as state}]
   (let [columns (:columns screen)
-        rows    (:rows screen)
-        scale   (:scale screen)]
+        rows    (:rows screen)]
     (.setAttribute canvas "width"   (* columns scale))
     (.setAttribute canvas "height"  (* rows    scale)))
   state)
@@ -29,8 +30,9 @@
 
 (defn render
   "Render the canvas according to screen memory."
-  [{{:keys [columns rows memory scale]} :screen :as state}]
+  [{{:keys [columns rows memory]} :screen :as state}]
   ;; clear old canvas first
+  (.log js/console "===================================")
   (clear state)
   ;; loop through screen, if the element is not zero, draw
   ;; on canvas with black.
