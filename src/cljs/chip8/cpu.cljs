@@ -584,35 +584,3 @@
   (-> state
       (decoding))
   )
-
-
-(comment
-
-  (-> (make-cpu)
-      (load-rom [0xA2 0x1E
-                 0xC2 0x01
-                 0x32 0x01
-                 0xA2 0x1A
-                 0xD0 0x14])
-      (decoding)
-      :pc
-      )
-
-
-
-  (.log js/console "adadasda")
-
-  (-> (make-cpu)
-      (screen/set-pixel 31 31)
-      (screen/set-pixel 1 1)
-
-      (screen/set-pixel 31 0)
-      (screen/set-pixel 33 0)
-      (screen/set-pixel 63 0)
-      (screen/set-pixel 63 31)
-      (screen/render)
-      )
-
-  (:pc (-> (make-cpu)
-           (assoc :pc 2)))
-  )
