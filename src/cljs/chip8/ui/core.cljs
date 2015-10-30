@@ -47,6 +47,8 @@
 
   )
 
+(:STOP @app-state)
+
 ;; (let [{:keys [memory pc]} @app-state
 ;;       opcode (bit-or (bit-shift-left (nth memory pc) 8)
 ;;                      (nth memory (inc pc)))

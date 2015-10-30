@@ -167,6 +167,8 @@
    :screen (screen/make-screen)
 
    :STOP 0
+
+   :message ""
    })
 
 ;;;; CPU States
@@ -570,15 +572,13 @@
            ["F"  _  "5" "5"] (opcode-FX55 state X)
            ["F"  _  "6" "5"] (opcode-FX65 state X)
            ["F"  _  "1" "E"] (opcode-FX1E state X)
-           ;;           :else (.log js/console (str "ERROR: no such opcode:" "0x" w x y z))
-           :else ;;(do
+           :else (do
                    ;; Set STOP flag
-                   (throw (js/Error. (str "-->ERROR: no such opcode:" "0x" w x y z)))
-                   ;;(write-register state :STOP 1)
-                   ;;)
+                   (-> state
+                       (write-register :message (str "ERROR: no such opcode:" "0x" w x y z))
+                       (write-register :STOP 1)))
            )
-    )
-  )
+    ))
 
 (defn step [state]
   (-> state
