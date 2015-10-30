@@ -1,4 +1,5 @@
 (ns chip8.ui.core
+  ;; (:refer-clojure :exclude [loop])
   (:require [chip8.cpu :as cpu]
             [chip8.ui.screen :as screen]
             [chip8.ui.sound :as sound]
@@ -11,25 +12,41 @@
 ;; The full application state
 (def app-state (atom (cpu/make-cpu)))
 
+(def emulator-loop (atom nil))
+
 (def request-animation-frame
-  (or (.-requestAnimationFrame js/window)
-      (.-webkitRequestAnimationFrame js/window)
-      (.-mozRequestAnimationFrame js/window)
-      (.-oRequestAnimationFrame js/window)
-      (.-msRequestAnimationFrame js/window)
-      (fn [callback] (js/setTimeout callback (/ 1000 60)))))
+  (reset! emulator-loop
+          (or (.-requestAnimationFrame js/window)
+              (.-webkitRequestAnimationFrame js/window)
+              (.-mozRequestAnimationFrame js/window)
+              (.-oRequestAnimationFrame js/window)
+              (.-msRequestAnimationFrame js/window)
+              (fn [callback] (js/setTimeout callback (/ 1000 60))))))
 
-(defn run-emulator-loop []
-  (request-animation-frame run-emulator-loop)
+(defn stop-emulator-loop []
+  (js/cancelAnimationFrame @emulator-loop))
 
-  (reset! app-state
-          (-> @app-state
-              (cpu/step)
-              (screen/render)
-              ))
+(defn start-emulator-loop []
+  (request-animation-frame start-emulator-loop)
+
+  ;; check if we need to stop emulator
+  ;;(when ())
+
+      (reset! app-state (-> @app-state
+                          (cpu/step)
+                          (screen/render)))
+  (if (nil? @app-state)
+    (stop-emulator-loop))
   )
 
-;;(:memory @app-state)
+;; (let [{:keys [memory pc]} @app-state
+;;       opcode (bit-or (bit-shift-left (nth memory pc) 8)
+;;                      (nth memory (inc pc)))
+;;       ]
+;;   (.log js/console "opcode 1: " (nth memory pc))
+;;   (.log js/console "opcode 2: " (nth memory (inc pc)))
+;;   (.log js/console "opcode A: " opcode)
+;;   )
 
 ;; make native arrays sequable
 ;; ref: https://groups.google.com/forum/#!topic/clojurescript/bMoFWh7VYGg
@@ -49,9 +66,15 @@
     (events/listen req event-type/SUCCESS
                    (fn [n]
 
+                     ;; restart a new app-state
                      (reset! app-state
-                             (cpu/load-rom @app-state
-                                           (js/Uint8Array. (.getResponse req))))
+                             (-> (cpu/make-cpu)
+                                 (cpu/load-rom (js/Uint8Array. (.getResponse req)))))
+
+;;                     (.log js/console (str "-->App-state: " (:memory @app-state)))
+                     ;; start the emulator
+;;                     (start-emulator-loop)
+;;(cpu/step @app-state)
 
                      ;; log data
                      ;; (.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
