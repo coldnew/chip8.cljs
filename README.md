@@ -2,13 +2,10 @@
 
 CHIP-8 emulator written in clojurescript.
 
-## Usage
-
-FIXME
+See (DEMO)[http://coldnew.github.io/chip8.cljs]
 
 ## License
 
 Copyright © 2015 Yen-Chin, Lee <coldnew.tw@gmail.com>
 
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Distributed under the Eclipse Public License either version 1.0 or any later version.
