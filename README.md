@@ -2,7 +2,7 @@
 
 CHIP-8 emulator written in clojurescript.
 
-See (DEMO)[http://coldnew.github.io/chip8.cljs]
+See [DEMO](http://coldnew.github.io/chip8.cljs) here.
 
 ## License
 
