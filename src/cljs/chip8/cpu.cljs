@@ -164,7 +164,8 @@
    ;; Extra state to let the UI know if machine is stop or error message.
    :STOP 0
    :message ""
-   :PAUSE 0
+
+   :key 0  ;; store keycode if user enter
    })
 
 ;;;; CPU States
@@ -189,6 +190,7 @@
 (defn opcode-00EE
   "Return from a subroutine."
   [{:keys [sp stack] :as state}]
+  ;;  (.log js/console (str " -> sp: " sp " stac: " stack))
   (-> state
       (write-sp (dec sp))
       (write-pc (+ 2 (nth stack (dec sp))))))
@@ -207,7 +209,7 @@
   [{:keys [pc sp stack] :as state} NNN]
   (-> state
       (write-stack sp pc)
-      (write-sp (inc pc))
+      (write-sp (inc sp))
       (write-pc NNN)))
 
 (defn opcode-3XNN
@@ -385,7 +387,6 @@
       (write-v X (bit-and (rand-int 256) NN))
       (add-to-pc 2)))
 
-
 (defn- protect-region
   "Prevent v ovrflow on bound."
   [v bound]
@@ -409,6 +410,7 @@
            (if (= v 1)
              (write-v state 0xf 1) state))))))
 
+;; ref: https://github.com/greatcodeclub/chip8/blob/master/vm.js
 (defn opcode-DXYN
   "Display n-byte sprite starting at memory location I at (Vx, Vy),
   set VF = collision."
@@ -438,6 +440,16 @@
                state))))
         (add-to-pc 2))))
 
+
+(defn opcode-EX9E
+  [{:keys [key v] :as state} X]
+  (add-to-pc state (if (= key (nth v X)) 4 2)))
+
+
+(defn opcode-EXA1
+  [{:keys [key v] :as state} X]
+  (add-to-pc state (if-not (= key (nth v X)) 4 2)))
+
 (defn opcode-FX07
   "Set Vx = delay timer value."
   [{:keys [pc v delay-timer] :as state} X]
@@ -445,14 +457,16 @@
       (write-v X delay-timer)
       (add-to-pc 2)))
 
-;; FIXME:
-;; (defn opcode-FX0A
-;;   " Wait for a key press, store the value of the key in Vx."
-;;   [{:keys [v] :as state} X]
-;;   (let [Vx (nth v X)]
-;;     (-> state
-;;         (write-delay-timer Vx)
-;;         (write-pc 2))))
+(defn opcode-FX0A
+  " Wait for a key press, store the value of the key in Vx."
+  [{:keys [v] :as state} X]
+  (let [Vx (nth v X)
+        key (:key state)]
+    (if-not (zero? key)
+      (-> state
+          (write-v X key)
+          (add-to-pc 2))
+      state)))
 
 
 (defn opcode-FX15
@@ -511,10 +525,6 @@
 
 (defn execute
   [{:keys [memory pc] :as state}]
-  ;; (.log js/console "opcode 1: " (nth memory pc))
-  ;; (.log js/console "opcode 2: " (nth memory (inc pc)))
-
-  ;;(.log js/console "opcode pc: " pc)
 
   (let [opcode (+ (bit-shift-left (nth memory pc) 8)
                   (nth memory (inc pc)))
@@ -524,9 +534,6 @@
         X   (int (str "0x" x))
         Y   (int (str "0x" y))
         N   (int (str "0x" z))]
-
-
-    ;;(.log js/console (str "=> opcode: " (str "0x" w x y z)))
 
     (match [ w   x   y   z ]
            ["0" "0" "E" "0"] (opcode-00E0 state)
@@ -552,7 +559,10 @@
            ["B"  _   _   _ ] (opcode-BNNN state NNN)
            ["C"  _   _   _ ] (opcode-CXNN state X NN)
            ["D"  _   _   _ ] (opcode-DXYN state X Y N)
+           ["E"  _  "9" "E"] (opcode-EX9E state X)
+           ["E"  _  "A" "1"] (opcode-EXA1 state X)
            ["F"  _  "0" "7"] (opcode-FX07 state X)
+           ["F"  _  "0" "A"] (opcode-FX0A state X)
            ["F"  _  "1" "5"] (opcode-FX15 state X)
            ["F"  _  "1" "8"] (opcode-FX18 state X)
            ["F"  _  "2" "9"] (opcode-FX29 state X)
@@ -581,17 +591,17 @@
     state))
 
 (defn update-timers [state]
-  (if-not (zero? (:PAUSE state))
-    (-> state
-        (update-delay-timer)
-        (update-sound-timer)))
-  state)
-
-(defn step [state]
   (-> state
-      (execute)
-      (update-timers)
-      )
-  )
+      (update-delay-timer)
+      (update-sound-timer)))
 
-;;(into-array  [1 2 3])
+(defn step
+  ([state speed]
+   (-> (loop [s state
+              acc 0]
+         (if (> acc speed)
+           s
+           (recur (execute s) (inc acc))))
+       (update-timers)))
+  ([state]
+   (step state 1)))

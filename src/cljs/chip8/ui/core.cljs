@@ -15,52 +15,24 @@
 
 (def emulator-loop (atom nil))
 
+(def speed (atom 10))
+
 (defn stop-emulator-loop []
   (js/cancelAnimationFrame @emulator-loop)
   (reset! emulator-loop nil))
-
-(defn to-exec [state]
-  (-> state
-      (cpu/step)
-;;      (screen/render)
-      )
-  )
-
-(defn to-rend [state]
-  (-> state
-;;      (cpu/step)
-      (screen/render)
-      )
-  )
-
-
-
 
 (defn start-emulator-loop []
   (reset! emulator-loop (js/requestAnimationFrame start-emulator-loop))
 
   (reset! app-state (-> @app-state
-                        (cpu/step)
+                        (cpu/write-register :key @keyboard/key)
+                        (cpu/step @speed)
                         (sound/play)
                         (screen/render)))
 
   (when-not (zero? (:STOP @app-state))
     (.log js/console "STOP Machine")
-    (stop-emulator-loop))
-
-  ;; (loop [state @app-state
-  ;;        ;;   next-state (to-exec state)
-  ;;        last-state state
-  ;;        ]
-  ;;   ;; (when (and (not= state last-state) (zero? (:STOP state)))
-  ;;   ;;   (js/requestAnimationFrame (fn [] (to-rend state)))
-  ;;   ;;   )
-
-  ;;   (if (zero? (:STOP state))
-  ;;     ;;(stop-emulator-loop)
-  ;;     (recur (to-exec state) state)
-  ;;     ))
-  )
+    (stop-emulator-loop)))
 
 ;; make native arrays sequable
 ;; ref: https://groups.google.com/forum/#!topic/clojurescript/bMoFWh7VYGg
