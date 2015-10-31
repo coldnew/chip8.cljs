@@ -16,3 +16,12 @@
 
 (defn stop-buzzer []
   (.stop osc))
+
+(defn play [state]
+  (let [timer (:sound-timer state)]
+    ;; (if (> timer 0)
+    ;;   (start-buzzer)
+    ;;   (stop-buzzer)
+    ;;   )
+    )
+  state)

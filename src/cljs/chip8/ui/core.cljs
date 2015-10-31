@@ -41,6 +41,7 @@
 
   (reset! app-state (-> @app-state
                         (cpu/step)
+                        (sound/play)
                         (screen/render)))
 
   (when-not (zero? (:STOP @app-state))
