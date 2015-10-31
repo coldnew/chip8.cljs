@@ -595,7 +595,13 @@
       (update-delay-timer)
       (update-sound-timer)))
 
-(defn step [state]
-  (-> state
-      (execute)
-      (update-timers)))
+(defn step
+  ([state speed]
+   (-> (loop [s state
+              acc 0]
+         (if (> acc speed)
+           s
+           (recur (execute s) (inc acc))))
+       (update-timers)))
+  ([state]
+   (step state 1)))

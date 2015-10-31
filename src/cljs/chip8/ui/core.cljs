@@ -24,17 +24,11 @@
 (defn start-emulator-loop []
   (reset! emulator-loop (js/requestAnimationFrame start-emulator-loop))
 
-  (reset! app-state (->
-                     (loop [s @app-state
-                            acc 0]
-                       (if (> acc @speed)
-                         s
-                         (recur (-> s
-                                    (cpu/write-register :key @keyboard/key)
-                                    (cpu/execute))
-                                (inc acc))))
-                     (sound/play)
-                     (screen/render)))
+  (reset! app-state (-> @app-state
+                        (cpu/write-register :key @keyboard/key)
+                        (cpu/step @speed)
+                        (sound/play)
+                        (screen/render)))
 
   (when-not (zero? (:STOP @app-state))
     (.log js/console "STOP Machine")
