@@ -6,7 +6,7 @@ See [DEMO](http://coldnew.github.io/chip8.cljs) here.
 
 ## Screenshot
 
-![Screenshot](https://github.com/coldnew/chip8.cljs/raw/master/screenshot.jpg)
+![Screenshot](https://raw.githubusercontent.com/coldnew/chip8.cljs/master/screenshot.png)
 
 ## License
 
