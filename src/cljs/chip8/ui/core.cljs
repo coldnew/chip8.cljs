@@ -15,24 +15,28 @@
 
 (def emulator-loop (atom nil))
 
-(def request-animation-frame
-  (reset! emulator-loop
-          ;; (or (.-requestAnimationFrame js/window)
-          ;;     (.-webkitRequestAnimationFrame js/window)
-          ;;     (.-mozRequestAnimationFrame js/window)
-          ;;     (.-oRequestAnimationFrame js/window)
-          ;;     (.-msRequestAnimationFrame js/window)
-          ;;     (fn [callback] (js/setTimeout callback (/ 1000 60))))
-          (.-requestAnimationFrame js/window)
-          ))
-
-
 (defn stop-emulator-loop []
   (js/cancelAnimationFrame @emulator-loop)
   (reset! emulator-loop nil))
 
+(defn to-exec [state]
+  (-> state
+      (cpu/step)
+;;      (screen/render)
+      )
+  )
+
+(defn to-rend [state]
+  (-> state
+;;      (cpu/step)
+      (screen/render)
+      )
+  )
+
+
+
+
 (defn start-emulator-loop []
-  ;;(request-animation-frame start-emulator-loop)
   (reset! emulator-loop (js/requestAnimationFrame start-emulator-loop))
 
   (reset! app-state (-> @app-state
@@ -41,11 +45,20 @@
 
   (when-not (zero? (:STOP @app-state))
     (.log js/console "STOP Machine")
-    ;;    (stop-emulator-loop)
-    (js/cancelAnimationFrame @emulator-loop)
-    (reset! emulator-loop nil)
-    )
+    (stop-emulator-loop))
 
+  ;; (loop [state @app-state
+  ;;        ;;   next-state (to-exec state)
+  ;;        last-state state
+  ;;        ]
+  ;;   ;; (when (and (not= state last-state) (zero? (:STOP state)))
+  ;;   ;;   (js/requestAnimationFrame (fn [] (to-rend state)))
+  ;;   ;;   )
+
+  ;;   (if (zero? (:STOP state))
+  ;;     ;;(stop-emulator-loop)
+  ;;     (recur (to-exec state) state)
+  ;;     ))
   )
 
 ;; make native arrays sequable
@@ -74,10 +87,7 @@
                                    (cpu/load-rom (js/Uint8Array. (.getResponse req)))))
 
                        ;; start the emulator
-                       (start-emulator-loop)
-                       ;; log data
-                       ;;(.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
-                       ))
+                       (start-emulator-loop)))
       (.send req (str "roms/" name) "GET")
       (.log js/console "Select rom: " name))))
 

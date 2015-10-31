@@ -32,7 +32,6 @@
   "Render the canvas according to screen memory."
   [{{:keys [columns rows memory]} :screen :as state}]
   ;; clear old canvas first
-;;  (.log js/console "===================================")
   (clear state)
   ;; loop through screen, if the element is not zero, draw
   ;; on canvas with black.

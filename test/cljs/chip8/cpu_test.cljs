@@ -3,7 +3,6 @@
   (:require [cljs.test]
             [chip8.cpu :as cpu]
             [chip8.screen :as screen]))
-(comment
 (deftest cpu-test
   (let [cpu (cpu/make-vm)
         memory (:memory cpu)]
@@ -201,5 +200,3 @@
       (is (= 8 (-> cpu (cpu/opcode-FX1E 2) :i)))
       (is (= 15 (-> cpu (cpu/opcode-FX1E 9) :i))))
     ))
-
-)

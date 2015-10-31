@@ -66,6 +66,10 @@
   [{:keys [pc] :as state} val]
   (assoc-in state [:pc] val))
 
+(defn increase-pc
+  [{:keys [pc] :as state} val]
+  (write-pc state (+ pc val)))
+
 (defn write-sp
   [state sp]
   (assoc-in state [:sp] sp))
@@ -74,18 +78,19 @@
   [state i]
   (assoc-in state [:i] i))
 
-(defn write-dt
+(defn write-delay-timer
   [state dt]
-  (assoc-in state [:dt] dt))
+  (assoc-in state [:delay-timer] dt))
 
-(defn write-st
+(defn write-screen
+  [state screen]
+  (assoc-in state [:screen] screen))
+
+(defn write-sound-timer
   [state st]
-  (assoc-in state [:st] st))
+  (assoc-in state [:sound-timer] st))
 
-(defn write-draw-flag
-  [state draw-flag]
-  (assoc-in state [:draw-flag] draw-flag))
-
+;; FIXME: remove
 (defn write-register
   [state key val]
   (assoc-in state [key] val))
@@ -145,29 +150,21 @@
    ;; register (DT) is non-zero.
    ;; This timer does nothing more than subtract 1 from the
    ;; value of DT at a rate of 60Hz. When DT reaches 0, it deactivates.
-   :dt 0
+   :delay-timer 0
 
    ;; The sound timer is active whenever the sound timer
    ;; register (ST) is non-zero. This timer also decrements
    ;; at a rate of 60Hz, however, as long as ST's value is
    ;; greater than zero, the Chip-8 buzzer will sound. When ST
    ;; reaches zero, the sound timer deactivates.
-   :st 0
-
-   ;; This is special flag for canvas function to know when
-   ;; to update the canvas screen. If the flag not zero,
-   ;; update the canvas.
-   :draw-flag 0
-
-   ;; FIXME:
-   :timer {:delay 0
-           :sound 0}
+   :sound-timer 0
 
    :screen (screen/make-screen)
 
+   ;; Extra state to let the UI know if machine is stop or error message.
    :STOP 0
-
    :message ""
+   :PAUSE 0
    })
 
 ;;;; CPU States
@@ -178,19 +175,16 @@
 (defn load-rom
   "Load rom to memory. The program will be loaded start at 0x200."
   [state rom]
-  ;;(.log js/console (str "=> ROM:" (vec rom)))
   (-> state
       (write-memory (vec rom) 0x200)))
 
 ;; FIXME:
 (defn opcode-00E0
-  "Clear the screen. This function will also set draw-flag to 1
-  to make canvas function refresh."
+  "Clear the screen."
   [{:keys [pc] :as state}]
   (-> state
-      (write-register :screen (screen/make-screen))
-      (write-draw-flag 1)
-      (write-pc (+ pc 2))))
+      (write-screen (screen/make-screen))
+      (increase-pc 2)))
 
 (defn opcode-00EE
   "Return from a subroutine."
@@ -223,7 +217,7 @@
   [{:keys [pc v] :as state} X NN]
   (let [Vx (nth v X)]
     (-> state
-        (write-pc (+ pc (if (= Vx NN) 4 2))))))
+        (increase-pc (if (= Vx NN) 4 2)))))
 
 (defn opcode-4XNN
   "Skip next instruction if VX != NN.
@@ -232,7 +226,7 @@
   [{:keys [pc v] :as state} X NN]
   (let [Vx (nth v X)]
     (-> state
-        (write-pc (+ pc (if-not (= Vx NN) 4 2))))))
+        (increase-pc (if-not (= Vx NN) 4 2)))))
 
 (defn opcode-5XY0
   "Skip next instruction if Vx = Vy.
@@ -241,7 +235,7 @@
   [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-pc (+ pc (if (= Vx Vy) 4 2))))))
+        (increase-pc (if (= Vx Vy) 4 2)))))
 
 (defn opcode-6XNN
   "Set Vx to NN.
@@ -249,7 +243,7 @@
   [{:keys [pc] :as state} X NN]
   (-> state
       (write-v X NN)
-      (write-pc (+ pc 2))))
+      (increase-pc 2)))
 
 (defn opcode-7XNN
   "Set Vx = Vx + NN.
@@ -258,7 +252,7 @@
   (let [Vx (nth v X)]
     (-> state
         (write-v X (bit-and (+ Vx NN) 0xff))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY0
   "Set Vx = Vy.
@@ -267,7 +261,7 @@
   (let [Vy (nth v Y)]
     (-> state
         (write-v X Vy)
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY1
   "Set Vx = Vx OR Vy.
@@ -279,7 +273,7 @@
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-or Vx Vy))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY2
   "Set Vx = Vx AND Vy.
@@ -291,7 +285,7 @@
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-and Vx Vy))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY3
   "Set Vx = Vx XOR Vy.
@@ -304,7 +298,7 @@
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
         (write-v  X (bit-xor Vx Vy))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY4
   "Set Vx = Vx + Vy, set VF = carry.
@@ -318,7 +312,7 @@
     (-> state
         (write-v  X (if (> sum 0xff) (- sum 256) sum))
         (write-v 15 (if (> sum 0xff) 1 0))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY5
   "Set Vx = Vx - Vy, set VF = NOT borrow.
@@ -330,7 +324,7 @@
     (-> state
         (write-v  X (if (< sub 0) (+ sub 256) sub))
         (write-v 15 (if (> sub 0) 1 0))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY6
   "Set Vx = Vx SHR 1.
@@ -341,7 +335,7 @@
     (-> state
         (write-v 15 (bit-and Vx 0x01))
         (write-v  X (bit-shift-right Vx 1))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XY7
   "Set Vx = Vy - Vx, set VF = NOT borrow.
@@ -352,7 +346,7 @@
     (-> state
         (write-v 15 (if (> Vx Vy) 0 1))
         (write-v  X (- Vy Vx))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-8XYE
   "Set Vx = Vx SHL 1."
@@ -361,21 +355,21 @@
     (-> state
         (write-v 15 (bit-and Vx 0x80))
         (write-v  X (bit-shift-left Vx 1))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-9XY0
   "Skip next instruction if Vx != Vy."
   [{:keys [pc v] :as state} X Y]
   (let [[Vx Vy] (VxVy v X Y)]
     (-> state
-        (write-pc (+ pc (if-not (= Vx Vy) 4 2))))))
+        (increase-pc (if-not (= Vx Vy) 4 2)))))
 
 (defn opcode-ANNN
   "Set I = NNN."
   [{:keys [pc] :as state} NNN]
   (-> state
       (write-i NNN)
-      (write-pc (+ pc 2))))
+      (increase-pc 2)))
 
 (defn opcode-BNNN
   "Jump to location NNN + V0"
@@ -389,7 +383,7 @@
   [{:keys [pc v] :as state} X NN]
   (-> state
       (write-v X (bit-and (rand-int 256) NN))
-      (write-pc (+ pc 2))))
+      (increase-pc 2)))
 
 
 (defn- protect-region
@@ -441,15 +435,14 @@
                  (reset! sprite (bit-shift-left @sprite 1))))
              ;; return state
              @s)))
-        (write-pc (+ pc 2)))))
-
+        (increase-pc 2))))
 
 (defn opcode-FX07
   "Set Vx = delay timer value."
-  [{:keys [pc v dt] :as state} X]
+  [{:keys [pc v delay-timer] :as state} X]
   (-> state
-      (write-v X dt)
-      (write-pc (+ pc 2))))
+      (write-v X delay-timer)
+      (increase-pc 2)))
 
 ;; FIXME:
 ;; (defn opcode-FX0A
@@ -457,7 +450,7 @@
 ;;   [{:keys [v] :as state} X]
 ;;   (let [Vx (nth v X)]
 ;;     (-> state
-;;         (write-dt Vx)
+;;         (write-delay-timer Vx)
 ;;         (write-pc 2))))
 
 
@@ -466,16 +459,16 @@
   [{:keys [pc v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
-        (write-dt Vx)
-        (write-pc (+ pc 2)))))
+        (write-delay-timer Vx)
+        (increase-pc 2))))
 
 (defn opcode-FX18
   "Set sound timer = Vx."
   [{:keys [pc v] :as state} X]
   (let [Vx (nth v X)]
     (-> state
-        (write-st Vx)
-        (write-pc (+ pc 2)))))
+        (write-sound-timer Vx)
+        (increase-pc 2))))
 
 (defn opcode-FX29
   "Set I = location of sprite for digit Vx."
@@ -483,7 +476,7 @@
   (let [Vx (nth v X)]
     (-> state
         (write-i (* 5 Vx))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-FX33
   "Store BCD representation of Vx in memory locations I, I+1, I+2."
@@ -491,21 +484,21 @@
   (let [Vx (nth v X)]
     (-> state
         (write-memory (->bcd Vx) i)
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn opcode-FX55
   "Store registers V0 through Vx in memory starting at location I."
   [{:keys [pc i v memory] :as state} X]
   (-> state
       (write-memory (get-in-range v 0 (inc X)) i)
-      (write-pc (+ pc 2))))
+      (increase-pc 2)))
 
 (defn opcode-FX65
   "Read registers V0 through Vx from memory starting at location I."
   [{:keys [pc i v memory] :as state} X]
   (-> state
       (write-v (get-in-range memory i (+ i X 1)))
-      (write-pc (+ pc 2))))
+      (increase-pc 2)))
 
 (defn opcode-FX1E
   "Set I = I + Vx."
@@ -513,7 +506,7 @@
   (let [Vx (nth v X)]
     (-> state
         (write-i (+ i Vx))
-        (write-pc (+ pc 2)))))
+        (increase-pc 2))))
 
 (defn execute
   [{:keys [memory pc] :as state}]
@@ -572,6 +565,12 @@
                      (write-register :STOP 1)))
 
     ))
+
+(defn update-timers [state]
+  (when-not (zero? (:PAUSE state))
+
+    )
+  )
 
 (defn step [state]
   (-> state
