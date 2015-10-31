@@ -9,7 +9,7 @@
 
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.145"]
-;;                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+                 ;;                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [org.clojure/core.match "0.3.0-alpha4"]
                  [ring "1.4.0"]
                  [com.akolov.enlive-reload "0.2.1"]
@@ -63,8 +63,10 @@
                                                           :source-map    "resources/public/js/test.js.map"
                                                           :optimizations :simple
                                                           :pretty-print  true}}
-                                        }}}}
-
+                                        }}}
+             :prod {:cljsbuild {:builds {:app
+                                         {:source-paths ["env/prod"]
+                                          :compiler {:optimizations :advanced :pretty-print false}}}}}}
 
   :min-lein-version "2.5.1"
 

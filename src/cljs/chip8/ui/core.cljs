@@ -7,7 +7,8 @@
             [chip8.ui.rom :as rom]
             [goog.dom :as dom]
             [goog.events :as events]
-            [goog.net.EventType :as event-type]))
+            [goog.net.EventType :as event-type]
+            [goog.net.XhrIo :as gxhr]))
 
 ;; The full application state
 (def app-state (atom (cpu/make-cpu)))
@@ -27,7 +28,7 @@
 
 
 (defn stop-emulator-loop []
-  (.cancelAnimationFrame js/window @emulator-loop)
+  (js/cancelAnimationFrame @emulator-loop)
   (reset! emulator-loop nil))
 
 (defn start-emulator-loop []
@@ -47,17 +48,6 @@
 
   )
 
-(:STOP @app-state)
-
-;; (let [{:keys [memory pc]} @app-state
-;;       opcode (bit-or (bit-shift-left (nth memory pc) 8)
-;;                      (nth memory (inc pc)))
-;;       ]
-;;   (.log js/console "opcode 1: " (nth memory pc))
-;;   (.log js/console "opcode 2: " (nth memory (inc pc)))
-;;   (.log js/console "opcode A: " opcode)
-;;   )
-
 ;; make native arrays sequable
 ;; ref: https://groups.google.com/forum/#!topic/clojurescript/bMoFWh7VYGg
 (extend-protocol ISeqable
@@ -69,29 +59,27 @@
 ;; This function define the chip8 cpu action when user
 ;; select rom to play. It will also passed the rom data
 ;; to cpu in js/Unit8Array format.
-(defn load-rom
-  [name]
-  (let [req (goog.net.XhrIo.)]
-    (.setResponseType req "arraybuffer")
-    (events/listen req event-type/SUCCESS
-                   (fn [n]
+(defn ^:export load-rom [name]
+  (when (rom/is-valid? name)
+    (let [req (goog.net.XhrIo.)]
+      (.setResponseType req "arraybuffer")
+      (events/listen req event-type/SUCCESS
+                     (fn [n]
+                       ;; stop emulator
+                       (stop-emulator-loop)
 
-                     ;; restart a new app-state
-                     (reset! app-state
-                             (-> (cpu/make-cpu)
-                                 (cpu/load-rom (js/Uint8Array. (.getResponse req)))))
+                       ;; reset a new app-state
+                       (reset! app-state
+                               (-> (cpu/make-cpu)
+                                   (cpu/load-rom (js/Uint8Array. (.getResponse req)))))
 
-                     ;;                     (.log js/console (str "-->App-state: " (:memory @app-state)))
-                     ;; start the emulator
-                     (start-emulator-loop)
-                     ;;(cpu/step @app-state)
-
-                     ;; log data
-                     ;;(.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
-                     ))
-
-    (.send req (str "roms/" name) "GET")
-    (.log js/console "Select rom: " name)))
+                       ;; start the emulator
+                       (start-emulator-loop)
+                       ;; log data
+                       ;;(.log js/console  ">>>> "  (js/Uint8Array. (.getResponse req)))
+                       ))
+      (.send req (str "roms/" name) "GET")
+      (.log js/console "Select rom: " name))))
 
 (defn main []
 
@@ -104,22 +92,5 @@
   ;; Initial keyboard event
   (keyboard/initial)
 
-  ;; Track when user select another rom
-  ;; (rom/on-select-event
-  ;;  (fn [rom-name]
-  ;;    ;; Display rom name for debug
-  ;;    (.log js/console "Select rom: " rom-name)
-
-  ;;    (load-rom rom-name)
-
-  ;;    ;; Blur rom-selector
-  ;;    ;; FIXME:
-  ;;    ;;(.blur (dom/getElement (:id (:rom @app-state))))
-  ;;    ;; Make focus on canvas
-  ;;    ;;        (.focus (screen/get-screen-canvas app-state))
-  ;;    (screen/focus-canvas)
-
-  ;;    ))
-
-  (rom/on-select-event load-rom)
+  ;; We export load-rom method to generate js file.
   )

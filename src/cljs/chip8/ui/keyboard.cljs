@@ -12,7 +12,8 @@
     "Z" 0x0A "X" 0x00 "C" 0x0B "V" 0x0F
     nil)
   )
-🇩🇪
+
+
 (defn initial []
   (.addEventListener js/window "keydown"
                      (fn [event]

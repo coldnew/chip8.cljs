@@ -1,8 +1,7 @@
 (ns chip8.cpu
   (:require [chip8.screen :as screen]
             [cljs.pprint :refer [cl-format]]
-            [cljs.core.match :refer-macros [match]]
-            ))
+            [cljs.core.match :refer-macros [match]]))
 
 (def fonts
   [0xF0 0x90 0x90 0x90 0xF0 ; 0
@@ -56,34 +55,34 @@
    (int (/ (mod val 100) 10))
    (int (mod val 10))])
 
-(defn- VxVy [V X Y]
+(defn VxVy [V X Y]
   [(nth V X) (nth V Y)])
 
-(defn- read-register
+(defn read-register
   [state key]
   (key state))
 
-(defn- write-pc
+(defn write-pc
   [{:keys [pc] :as state} val]
   (assoc-in state [:pc] val))
 
-(defn- write-sp
+(defn write-sp
   [state sp]
   (assoc-in state [:sp] sp))
 
-(defn- write-i
+(defn write-i
   [state i]
   (assoc-in state [:i] i))
 
-(defn- write-dt
+(defn write-dt
   [state dt]
   (assoc-in state [:dt] dt))
 
-(defn- write-st
+(defn write-st
   [state st]
   (assoc-in state [:st] st))
 
-(defn- write-draw-flag
+(defn write-draw-flag
   [state draw-flag]
   (assoc-in state [:draw-flag] draw-flag))
 
@@ -91,19 +90,19 @@
   [state key val]
   (assoc-in state [key] val))
 
-(defn- write-stack
+(defn write-stack
   ([{:keys [stack] :as state} idx val]
    (write-stack state (assoc stack idx val)))
   ([state stack]
    (assoc-in state [:stack] stack)))
 
-(defn- write-memory
+(defn write-memory
   ([{:keys [memory] :as state} arr start]
    (write-memory state (assoc-in-range memory arr start)))
   ([state memory]
    (assoc-in state [:memory] memory)))
 
-(defn- write-v
+(defn write-v
   ([{:keys [v] :as state} X val]
    (write-v state (assoc v X val)))
   ([{:keys [v] :as state} val]
@@ -179,7 +178,7 @@
 (defn load-rom
   "Load rom to memory. The program will be loaded start at 0x200."
   [state rom]
-  (.log js/console (str "=> ROM:" (vec rom)))
+  ;;(.log js/console (str "=> ROM:" (vec rom)))
   (-> state
       (write-memory (vec rom) 0x200)))
 
@@ -203,7 +202,7 @@
 (defn opcode-1NNN
   "Jump to address NNN."
   [state NNN]
-  (.log js/console (str "NNN: " NNN))
+  ;;(.log js/console (str "NNN: " NNN))
   (-> state
       (write-pc NNN)))
 
@@ -421,7 +420,7 @@
   "Display n-byte sprite starting at memory location I at (Vx, Vy),
   set VF = collision."
   [{:keys [pc v i memory] :as state} X Y N]
-  (.log js/console (str "DXYN: X: " X " Y: " Y " N: " N))
+  ;;(.log js/console (str "DXYN: X: " X " Y: " Y " N: " N))
   (let [[Vx Vy] (VxVy v X Y)
         width 8
         height N]
@@ -444,7 +443,6 @@
              @s)))
         (write-pc (+ pc 2)))))
 
-;;(nth [1 2 3] (inc 1))
 
 (defn opcode-FX07
   "Set Vx = delay timer value."
@@ -517,18 +515,12 @@
         (write-i (+ i Vx))
         (write-pc (+ pc 2)))))
 
-
-;;(int (str "0x" "1" "e" ))
-
-
-;;(cl-format nil "~:@(~4,'0x~)" 0xf)
-
-(defn decoding
+(defn execute
   [{:keys [memory pc] :as state}]
   ;; (.log js/console "opcode 1: " (nth memory pc))
   ;; (.log js/console "opcode 2: " (nth memory (inc pc)))
 
-  (.log js/console "opcode pc: " pc)
+  ;;(.log js/console "opcode pc: " pc)
 
   (let [opcode (+ (bit-shift-left (nth memory pc) 8)
                   (nth memory (inc pc)))
@@ -539,7 +531,9 @@
         Y   (int (str "0x" y))
         N   (int (str "0x" z))]
 
-    (.log js/console (str "=> opcode: " (str "0x" w x y z)))
+
+    ;;(.log js/console (str "=> opcode: " (str "0x" w x y z)))
+
     (match [ w   x   y   z ]
            ["0" "0" "E" "0"] (opcode-00E0 state)
            ["0" "0" "E" "E"] (opcode-00EE state)
@@ -572,15 +566,14 @@
            ["F"  _  "5" "5"] (opcode-FX55 state X)
            ["F"  _  "6" "5"] (opcode-FX65 state X)
            ["F"  _  "1" "E"] (opcode-FX1E state X)
-           :else (do
-                   ;; Set STOP flag
-                   (-> state
-                       (write-register :message (str "ERROR: no such opcode:" "0x" w x y z))
-                       (write-register :STOP 1)))
-           )
+           ;; If we enter here, there's something wrong :(
+           :else (-> state
+                     (write-register :message (str "ERROR: no such opcode:" "0x" w x y z))
+                     (write-register :STOP 1)))
+
     ))
 
 (defn step [state]
   (-> state
-      (decoding))
+      (execute))
   )

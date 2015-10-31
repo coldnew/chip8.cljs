@@ -22,6 +22,7 @@
     (set! (.-innerHTML option) rom)
     (.appendChild selector option)))
 
+
 (defn update-rom-selector
   []
   (doseq [r roms]
@@ -31,9 +32,15 @@
   ;; update Rom Selector
   (update-rom-selector)
   ;; save selctor for listen change event
-  (reset! rom-selector
-          (-> (js/$ "select.dropdown")
-              (.dropdown))))
+  ;; (reset! rom-selector
+  ;;         (-> (js/$ "select.dropdown")
+  ;;             (.dropdown)))
+  )
+
+(defn is-valid? [name]
+  (if (some #{name} roms)
+    true
+    false))
 
 (defn on-select-event
   "Add Listener when rom is changed"
@@ -45,5 +52,4 @@
                ;; We only trigger the event when the
                ;; rom is member in rom/roms
                (when (some #{rom-name} roms)
-                 (load-rom-fn rom-name)))))
-      ))
+                 (load-rom-fn rom-name)))))))
