@@ -1,7 +1,7 @@
 (ns chip8.cpu
-  (:require [chip8.screen :as screen]
-            [cljs.pprint :refer [cl-format]]
-            [cljs.core.match :refer-macros [match]]))
+  (:require [cljs.pprint :refer [cl-format]]
+            [cljs.core.match :refer-macros [match]]
+            [chip8.ui.keyboard :as keyboard]))
 
 (def fonts
   [0xF0 0x90 0x90 0x90 0xF0 ; 0
@@ -30,6 +30,26 @@
      (take size
            (into fonts
                  (vec (repeat size 0)))))))
+
+;; ## Screen setup
+;;
+;; The original implementation of the Chip-8 language used a
+;; 64x32-pixel monochrome display with this format:
+;;
+;;        +----------------------+
+;;        | (0,0)       (63,0)   |
+;;        | (0,31)      (63,31)  |
+;;        +----------------------+
+;;
+(defn make-screen
+  "Create the hashmap used by screen"
+  []
+  (let [rows    32
+        columns 64]
+    {:rows rows
+     :columns columns
+     :memory (vec (repeat columns
+                          (vec (repeat rows 0))))}))
 
 (defn- assoc-in-range
   "Update arr with val from start."
@@ -90,7 +110,6 @@
   [state st]
   (assoc-in state [:sound-timer] st))
 
-;; FIXME: remove
 (defn write-register
   [state key val]
   (assoc-in state [key] val))
@@ -159,7 +178,7 @@
    ;; reaches zero, the sound timer deactivates.
    :sound-timer 0
 
-   :screen (screen/make-screen)
+   :screen (make-screen)
 
    ;; Extra state to let the UI know if machine is stop or error message.
    :STOP 0
@@ -179,12 +198,11 @@
   (-> state
       (write-memory (vec rom) 0x200)))
 
-;; FIXME:
 (defn opcode-00E0
   "Clear the screen."
   [{:keys [pc] :as state}]
   (-> state
-      (write-screen (screen/make-screen))
+      (write-screen (make-screen))
       (add-to-pc 2)))
 
 (defn opcode-00EE
@@ -574,7 +592,6 @@
            :else (-> state
                      (write-register :message (str "ERROR: no such opcode:" "0x" w x y z))
                      (write-register :STOP 1)))
-
     ))
 
 

@@ -1,10 +1,10 @@
 (ns  ^:figwheel-load chip8.cpu-test
   (:require-macros [cljs.test :refer (is deftest testing)])
   (:require [cljs.test]
-            [chip8.cpu :as cpu]
-            [chip8.screen :as screen]))
+            [chip8.cpu :as cpu]))
+
 (deftest cpu-test
-  (let [cpu (cpu/make-vm)
+  (let [cpu (cpu/make-cpu)
         memory (:memory cpu)]
 
     (testing "memory"
@@ -16,7 +16,7 @@
     (testing "load-rom"
       (is (= [1 2 3 4]
              (cpu/get-in-range
-              (-> (cpu/make-vm)
+              (-> (cpu/make-cpu)
                   (cpu/load-rom [1 2 3 4])
                   :memory)
               0x200 0x204))))
@@ -48,7 +48,7 @@
 
 (defn make-test-cpu
   []
-  (-> (cpu/make-vm)
+  (-> (cpu/make-cpu)
       (assoc-in [:i] 5)
       (assoc-in [:v] [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff])
       (cpu/load-rom [0xff 0xae 5 6 7 8 9 0xff 0xaa])
@@ -57,7 +57,7 @@
 
 (deftest opcode-test
   (let [cpu
-        (-> (cpu/make-vm)
+        (-> (cpu/make-cpu)
             (assoc-in [:i] 5)
             (assoc-in [:v] [1 2 3 4 5 5 7 8 9 10 0x13 0x89 12 13 0xfe 0xff])
             (cpu/load-rom [0xff 0xae 5 6 7 8 9 0xff 0xaa])
@@ -68,7 +68,7 @@
       (let [res  (-> cpu cpu/opcode-00E0)]
         (is (= 2 (-> res :pc)))
         (is (= 1 (-> res :draw-flag)))
-        (is (= (screen/make-screen) (-> res :screen)))))
+        (is (= (make-screen) (-> res :screen)))))
 
     (testing "opcode: 1NNN"
       (let [addr 123

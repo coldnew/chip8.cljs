@@ -14,3 +14,4 @@ resources/public/js/
 .nrepl-history
 figwheel_server.log
 out/
+.deploy/

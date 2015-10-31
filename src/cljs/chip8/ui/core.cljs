@@ -25,7 +25,7 @@
   (reset! emulator-loop (js/requestAnimationFrame start-emulator-loop))
 
   (reset! app-state (-> @app-state
-                        (cpu/write-register :key @keyboard/key)
+                        (cpu/write-register :key @keyboard/keycode)
                         (cpu/step @speed)
                         (sound/play)
                         (screen/render)))
@@ -73,7 +73,4 @@
   (screen/initial @app-state)
 
   ;; Initial keyboard event
-  (keyboard/initial)
-
-  ;; We export load-rom method to generate js file.
-  )
+  (keyboard/initial))
