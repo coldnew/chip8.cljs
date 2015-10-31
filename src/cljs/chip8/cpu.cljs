@@ -393,7 +393,7 @@
         (< v 0)           (protect-region (+ v bound) bound)
         :else v))
 
-(defn set-pixel
+(defn- set-pixel
   "Set the pixel on screen according x, y.
   Note that the pixel cooridinate is the same as CHIP-8 original
   implementation."
@@ -409,12 +409,10 @@
            (if (= v 1)
              (write-v state 0xf 1) state))))))
 
-;; FIXME:
 (defn opcode-DXYN
   "Display n-byte sprite starting at memory location I at (Vx, Vy),
   set VF = collision."
   [{:keys [pc v i memory] :as state} X Y N]
-  ;;(.log js/console (str "DXYN: X: " X " Y: " Y " N: " N))
   (let [[Vx Vy] (VxVy v X Y)
         width 8
         height N]
@@ -422,19 +420,22 @@
     (-> state
         ;; clear VF before we start
         (write-v 0xf 0)
-        ;; calculate sprite
-        ;; FIXME: dirty
+        ;; calculate uarr, a list contains coordinates which we need to update
+        ;; the screen memory, we use loop recur to keep the immutable data
         ((fn [state]
-           (let [sprite (atom 0)
-                 s (atom state)]
-             (dotimes [row height]
-               (reset! sprite (nth memory (+ i row)))
-               (dotimes [col width]
-                 (when (> (bit-and @sprite 0x80) 0)
-                   (reset! s (set-pixel @s (+ Vx col) (+ Vy row))))
-                 (reset! sprite (bit-shift-left @sprite 1))))
-             ;; return state
-             @s)))
+           (let [uarr
+                 (for [row (range height) :let [sprite (nth memory (+ i row))]
+                       col (range width)  :let [sprite (bit-shift-left sprite col)]
+                       :when (> (bit-and sprite 0x80) 0)]
+                   [(+ Vx col) (+ Vy row)])]
+             (if-not (empty? uarr)
+               (loop [ar uarr
+                      st state]
+                 (if (empty? ar)
+                   st
+                   (recur (next ar)
+                          (set-pixel st (nth (first ar) 0) (nth (first ar) 1)))))
+               state))))
         (increase-pc 2))))
 
 (defn opcode-FX07
