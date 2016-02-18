@@ -1,0 +1,73 @@
+body {
+	background-color: white;
+	font-family: 'Lucida Grande', Verdana, Arial, Sans-Serif;
+	color: #333;
+}
+
+hr {
+	width: 60%;
+	color: black;
+	background-color: black;
+	border: 0;
+	height: 1px;
+}
+
+li {
+	margin-bottom: 1em
+}
+
+#main {
+	border: 0px solid black;
+	width: 600px;
+	margin-left:auto; 
+    margin-right:auto;
+}
+
+#ch8 {
+	border: 1px solid black;
+	width: 450px;
+	margin-left: auto; 
+    margin-right: auto;
+}
+
+#ch8fonts {
+	border: 1px solid black;
+	width: 450px;
+	margin-left: auto; 
+    margin-right: auto;
+	vertical-align: middle;
+	text-align: center;
+	font-size: 100%;
+}
+
+td {
+	border: 0px solid white;
+	padding: 5px;
+	font-size: 75%;
+}
+
+td.opcode {
+	text-align: center;
+}
+
+#banner {
+	text-align: center;
+}
+
+#content, #twocols {
+	text-align: justify;
+	text-justify: inter-word;
+}
+
+a {
+	color: #06c;
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+code {
+	font-size: 140%;
+}

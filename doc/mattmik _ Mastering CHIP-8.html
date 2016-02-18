@@ -1,0 +1,1015 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
+	<title>mattmik : Mastering CHIP-8</title>
+	<link rel="stylesheet" type="text/css" href="mattmik%20_%20Mastering%20CHIP-8_files/style.css">
+<style type="text/css">:root #content > #center > .dose > .dosesingle,
+:root #content > #right > .dose > .dosesingle
+{display:none !important;}</style></head>
+
+<body>
+
+
+<p>
+	</p><p></p><table id="main">
+<tbody><tr><td id="banner"><img src="mattmik%20_%20Mastering%20CHIP-8_files/banner.png"></td></tr>
+	<tr>
+		<td id="content">
+		<center>
+			<b>By Matthew Mikolay</b><br><br>
+			<a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/3.0/"><img alt="Creative Commons License" style="border-width:0" src="mattmik%20_%20Mastering%20CHIP-8_files/88x31.png"></a><br><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">Mastering CHIP-8</span> by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Matthew Mikolay</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-nd/3.0/">Creative Commons Attribution-NonCommercial-NoDerivs 3.0 Unported License</a>.
+		</center><br>
+		The following article is a document I've been working on for quite 
+some time. Unfortunately, finishing it always seems to get pushed to the
+ back-burner when other commitments arise. I'm hoping that by posting it
+ here and adding to it over time, I'll be able to finally complete it. 
+If you have any suggestions or comments, feel free to email me!<br><br>
+		
+		<center>Hexadecimal values are written in <code>monospaced</code> font. Assume all monospaced numbers are hexadecimal unless otherwise stated.</center>
+		
+		<h1>Introduction</h1>
+		CHIP-8 is an interpreted minimalist programming language that was 
+designed by Joseph Weisbecker in the 1970s for use on the RCA COSMAC VIP
+ computer. Due to its hexadecimal format, it was best suited to machines
+ with a scarcity of memory, as minimal text processing had to be 
+performed by the interpreter before a program could be executed. This 
+property inevitably led to its implementation on a variety of hobbyist 
+computers aside from the VIP, such as the COSMAC ELF, Telmac 1800, and 
+ETI 660.<br><br>
+
+		The thirty-one instructions comprising the original CHIP-8 instruction
+ set provide utilities for primitive audio and monochrome video output, 
+user input, and data manipulation. CHIP-8 enjoyed relative success 
+during the late 1970s and early 1980s as a popular language for the 
+development of simple video games, and even spawned a multitude of 
+dialects providing additional features.<br><br>
+
+		Today, CHIP-8 remains popular in the hobbyist communities surrounding 
+the computers on which it was once implemented. CHIP-8 interpreters, 
+often mislabeled as "emulators," are increasingly common on a wide 
+variety of platforms, allowing any individual to run a CHIP-8 program in
+ the absence of an original hobbyist computer. This abundance of 
+interpreters is due to the similarity in design between a CHIP-8 
+interpreter and a system emulator; those wishing to gain experience in 
+emulator implementation often take on the task of programming a CHIP-8 
+interpreter.<br><br>
+
+		Despite its simplicity, a variety of enjoyable games and programs have
+ been coded in CHIP-8, proving that a programmer need not be limited by 
+the scope of a language. Though undoubtedly minimal in the features it 
+offers to programmers, CHIP-8 represents a successful attempt at scaling
+ down the complexities of a programming language to the basic level 
+needed to create simple programs and games without difficulty.<br><br>
+		
+		<h1>CHIP-8 Instructions</h1>
+		CHIP-8 programs are strictly hexadecimal based. This means that the 
+format of a CHIP-8 program bears little resemblance to the text-based 
+formats of higher level languages. Each CHIP-8 instruction is two bytes 
+in length and is represented using four hexadecimal digits. For example,
+ one common instruction is the <code>00E0</code> instruction, which is used to clear the screen of all graphics data.<br><br>
+
+		Certain CHIP-8 instructions accept 'arguments' to specify the values 
+which should be read or modified by a given instruction when encountered
+ by the interpreter. An argument is passed to an instruction of this 
+type also as a hexadecimal digit. When an instruction is presented in 
+this document containing non-hexadecimal characters, these locations 
+should be replaced in a program with valid hexadecimal digits depending 
+upon the input data. For example, valid uses of the CHIP-8 instruction <code>8XY1</code> include <code>8001</code>, <code>81A1</code>, <code>8F21</code>, etc.<br><br>
+		
+		<h1>Storage in Memory</h1>
+		CHIP-8 instructions are stored directly in system memory. On many of 
+the hobbyist computers of old, all CHIP-8 code would be entered directly
+ into the system using toggle switches or a memory editing utility. 
+Modern platforms allow files containing the binary data corresponding to
+ the hexadecimal instructions of a CHIP-8 program to be loaded into an 
+interpreter. These modern interpreters are simply automating the entry 
+of CHIP-8 data into the machine. In either case, each CHIP-8 instruction
+ in memory is said to be assigned to a unique memory address.<br><br>
+		
+		A small set of CHIP-8 instructions, including those used to generate 
+graphics, require these memory addresses to be specified as arguments. 
+For this reason, it is important to always be aware of the memory 
+location of each instruction when developing a CHIP-8 program.<br><br>
+
+		Consider the <code>1NNN</code>, instruction, which is used to jump to a certain address. A valid use of this instruction would be <code>134A</code>, which would reference the memory address <code>34A</code>.<br><br>
+
+		As standardized by the COSMAC VIP, the programmer should assume that 
+his or her CHIP-8 program is to be loaded into the machine starting at 
+address <code>200</code>, even when using a modern interpreter. A few 
+select hobbyist computers require that CHIP-8 programs be loaded 
+starting at a different address, such as the ETI-660, but this should 
+not be considered the norm.<br><br>
+		
+		It should be noted that CHIP-8 programs are normally stored in memory 
+in big-endian fashion, with the most significant byte of a two-byte 
+instruction being stored first. The CHIP-8 interpreter will execute a 
+CHIP-8 program starting at the initial address by stepping through the 
+instructions stored in memory one at a time and processing them in a 
+linear manner, unless instructions modifying flow control are 
+encountered.<br><br>
+		
+		<h1>Pseudo-Assemblers</h1>
+		Because certain CHIP-8 instructions require memory addresses to be 
+passed as arguments, the modification of a pre-existing program often 
+proves to be a hassle when these memory address arguments must be 
+adjusted as the result of instruction shifts. Fortunately, CHIP-8 
+pseudo-assemblers easily resolve this problem.<br><br>
+
+		A CHIP-8 pseudo-assembler<sup>†</sup> takes in a series of labels, 
+mnemonics, and arguments and outputs the corresponding hexadecimal 
+CHIP-8 code. Each hexadecimal CHIP-8 instruction corresponds to a unique
+ pseudo-assembly mnemonic. When using a pseudo-assembler, locations in 
+memory can be assigned labels, allowing the CHIP-8 mnemonics which would
+ normally accept memory addresses as arguments to reference these labels
+ instead. This substitution of labels for hardcoded addresses allows the
+ programmer to disregard the manual management of addresses, as all 
+addresses to which the labels correspond will be recomputed at assembly 
+time. Therefore, instructions can be inserted and removed in a CHIP-8 
+program without having to modify other sections of code.<br><br>
+
+		Coding in CHIP-8 pseudo-assembly is strongly encouraged, as it greatly
+ simplifies the process of managing those instructions referencing 
+memory addresses. However, pseudo-assembly was not a part of the 
+original CHIP-8 implementation on the COSMAC VIP, and for this reason, 
+all CHIP-8 code in this document will be presented in standard 
+hexadecimal format.<br><br>
+		
+		<sup>†</sup>An assembler accepts a series of mnemonics and outputs the
+ corresponding machine code. Likewise, a pseudo-assembler accepts a 
+series of mnemonics and outputs a program in a language other than 
+machine code. For this reason, the conversion program is identified as a
+ pseudo-assembler.<br><br>
+		
+		<h1>A Note on Undocumented Instructions</h1>
+		Many documents published shortly after the creation of CHIP-8 fail to describe a select few valid CHIP-8 instructions: the <code>8XY3</code>, <code>8XY6</code>, <code>8XY7</code>, and <code>8XYE</code>
+ instructions all went undocumented. This is due to the method with 
+which the CHIP-8 interpreter was implemented on the COSMAC VIP.<br><br>
+		
+		The VIP interpreter was designed to accept a generic <code>8XYN</code> instruction, where <code>N</code> is any valid hexadecimal digit, and execute machine language code dependent upon this value <code>N</code>. The functionality of instructions <code>8XY1</code>, <code>8XY2</code>, <code>8XY4</code>, and <code>8XY5</code>
+ was documented, but the four aforementioned instructions remained 
+neglected. However, VIP programmers soon learned of these undocumented 
+instructions and used them accordingly. For this reason, they are 
+considered a part of the original CHIP-8 instruction set and are 
+described in the following document.<br><br>
+		
+		<h1>All About Data Registers</h1>
+		The data register is the primary utility for data manipulation 
+provided by the CHIP-8 language. In order to perform any sort of 
+arithmetic operation, a register must be used. This concept parallels 
+that of registers in a central processing unit or microprocessor. In 
+fact, on the COSMAC VIP, the CHIP-8 registers were linked directly to 
+the registers of the 1802 microprocessor.<br><br>
+
+		CHIP-8 allows for the usage of sixteen eight-bit general purpose 
+registers capable of storing unsigned integers between decimal 0 and 
+255, or hexadecimal <code>00</code> to <code>FF</code>. These registers 
+are referred to as V0 to VF, one for each hexadecimal digit. Any 
+register can be used for data manipulation, but it should be noted that 
+the VF register is often modified by certain instructions to act as a 
+flag.<br><br>
+
+		The most primitive operation involving a data register is to set the 
+value of any given register. Two instructions exist to perform this 
+function: one to set a register to a specific eight bit value, and 
+another to set a register's value to that of another given register:<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>6XNN</code></td>
+			<td>Store number NN in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY0</code></td>
+			<td>Store the value of register VY in register VX</td>
+		</tr>
+		</tbody></table><br>
+		
+		Next, an eight bit value can be added to any given register using the following command:<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>7XNN</code></td>
+			<td>Add the value NN to register VX</td>
+		</tr>
+		</tbody></table><br>
+
+		Be aware that once the supplied number is added, if the value of the 
+register exceeds decimal 255 (the highest possible value that can be 
+stored by an eight bit register), the register will wraparound to a 
+corresponding value that can be stored by an eight bit register. In 
+other words, the register will always be reduced modulo decimal 256.<br><br>
+
+		Likewise, two registers can be added together. To add one register to another, the following instruction can be used:<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY4</code></td>
+			<td>Add the value of register VY to register VX<br>Set VF to 01 if a carry occurs<br>Set VF to 00 if a carry does not occur</td>
+		</tr>
+		</tbody></table><br>
+		
+		Similar to the <code>7XNN</code> instruction, the <code>8XY4</code> 
+instruction will cause values too large to be stored in a register to be
+ wrapped around to a modulo equivelent. However, unlike the <code>7XNN</code> instruction, the <code>8XY4</code>
+ instruction will modify the VF register to signal when a carry has 
+taken place. A carry is a term used to describe the aforementioned 
+action of when a value is too large to be stored in a given register. 
+When a carry takes place, the interpreter will set register VF to <code>01</code>. Otherwise, VF will be set to <code>00</code>.  Therefore, the <code>8XY4</code> instruction will always modify the VF register.<br><br>
+
+		Just as values can be added to a register, CHIP-8 provides instructions to subtract one register from another:<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY5</code></td>
+			<td>Subtract the value of register VY from register VX<br>Set VF to 00 if a borrow occurs<br>Set VF to 01 if a borrow does not occur</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY7</code></td>
+			<td>Set register VX to the value of VY minus VX<br>Set VF to 00 if a borrow occurs<br>Set VF to 01 if a borrow does not occur</td>
+		</tr>
+		</tbody></table><br>
+		
+		Observe that the only difference between these two subtraction 
+instructions is which register is subtracted from which: which register 
+is the minuend, and which is the subtrahend.<br><br>
+
+		Similar to the <code>8XY4</code> instruction's usage of the VF 
+register as a carry flag, these two subtraction instructions use the VF 
+register to signal when a borrow occurs. Because data registers can only
+ store unsigned values, a borrow will occur when the interpreter is 
+instructed to subtract a value from a given register which would 
+normally force the register to store a negative number. In other words, a
+ borrow occurs whenever the subtrahend is greater than the minuend. The 
+VF register is set to <code>00</code> if a borrow occurs, and <code>01</code> otherwise. <i>Therefore, the subtraction instructions will always modify the VF register.</i><br><br>
+
+		Aside from arithmetic operations, CHIP-8 allows for the manipulation 
+of registers on the level of individual bits using bitwise operations. 
+The following instructions can be used to AND, OR, and XOR two registers
+ together.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY2</code></td>
+			<td>Set VX to VX AND VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY1</code></td>
+			<td>Set VX to VX OR VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY3</code></td>
+			<td>Set VX to VX XOR VY</td>
+		</tr>
+		</tbody></table><br>
+
+		The bits of a data register can also be shifted to the left or to the right using the following instructions:<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY6</code></td>
+			<td>Store the value of register VY shifted right one bit in register VX<br>Set register VF to the least significant bit prior to the shift</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XYE</code></td>
+			<td>Store the value of register VY shifted left one bit in register VX<br>Set register VF to the most significant bit prior to the shift</td>
+		</tr>
+		</tbody></table><br>
+
+		Take note that the register shift instructions modify the VF register to store a value of <code>00</code> or <code>01</code>
+ depending upon the bit that was shifted out of place. If a register is 
+shifted left, the most significant bit of the register prior to the 
+shift will be placed into VF. If a register is shifted right, the least 
+significant bit of the register prior to the shift will be placed into 
+VF.<br><br>
+
+		Notice that these instructions shift register VY and store the result 
+in register VX. It is a common misconception when programming in CHIP-8 
+to assume that the VX register is shifted by this instruction, and VY 
+remains unmodified. To have a register perform a shift upon itself, a 
+register VX can be passed as both arguments: <code>8XX6</code> or <code>8XXE</code>. For example, to shift register V6 right by one bit, the instruction <code>8666</code> can be used.<br><br>
+
+		Often it is useful for a program or game to generate a random number 
+for some sort of mathematical application. For this reason, CHIP-8 
+provides an instruction to set a register to a "random"<sup>†</sup> value.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>CXNN</code></td>
+			<td>Set VX to a random number with a mask of NN</td>
+		</tr>
+		</tbody></table><br>
+
+		Observe that an additional byte is specified as a byte mask to reduce 
+the size of the size of the set of random numbers capable of being 
+returned by this instruction. When the CHIP-8 interpreter is commanded 
+to generate a random number, it chooses a random value between <code>00</code> and <code>FF</code>. It then logical ANDs this value with the byte mask before placing it in the target register.<br><br>
+		
+		<sup>†</sup>The word "random" is placed in quotes to emphasize that a 
+computer can never truly generate a random number. Instead, the values 
+return by random number generation routines will always be pseudo-random
+ and dependant upon some external mathematical operation.
+		
+		<h1>Flow Control with Jumps</h1>
+		Often it is necessary to instruct the interpreter to execute code in a
+ different section of a program, or repeat certain sections of code one 
+or more times. Fortunately, the CHIP-8 language provides utilities to 
+manipulate flow control.<br><br>
+
+		The simplest instructions used to modify flow control are "jumps," 
+which commands the interpreter to continue the execution of a program 
+from another memory address. Two jump commands exist in the CHIP-8 
+language: one to simply jump to a given address, and another to jump to 
+an address with an offset specified by the value stored in register V0.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>1NNN</code></td>
+			<td>Jump to address NNN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>BNNN</code></td>
+			<td>Jump to address NNN + V0</td>
+		</tr>
+		</tbody></table><br>
+		
+		When using the jump instructions, it is necessary to make sure that 
+the address to which a jump is made actually contains a valid CHIP-8 
+instruction. If an attempt is made to jump to an address outside of the 
+memory containing the CHIP-8 program (for example, to the memory 
+containing the CHIP-8 interpreter), the interpreter will most likely 
+crash along with the program.<br><br>
+
+		Care should also be taken to avoid unintentional infinite loops.<br><br>
+
+		<h1>Subroutines</h1>
+		CHIP-8 also allows for the declaration of subroutines, which can then 
+be called from other parts of the executing program. Subroutines are 
+particularly useful when identical or similar code must be executed 
+multiple times in a program. It should be noted that on the COSMAC VIP, 
+enough stack space for twelve successive subroutine calls was allocated,
+ but on many modern implementations, more memory is allocated for this 
+purpose.<br><br>
+
+		CHIP-8 subroutines do not require a specific instruction to signal 
+their start. Instead, the memory address of the first instruction in the
+ subroutine is sent to the call instruction.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>2NNN</code></td>
+			<td>Execute subroutine starting at address NNN</td>
+		</tr>
+		</tbody></table><br>
+		
+		CHIP-8 program execution will then continue from this address until a 
+termination instruction is found. This termination statement informs the
+ interpreter that the end of the currently executing subroutine has been
+ reached, and program execution should proceed at the point from which 
+the last subroutine call occurred.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>00EE</code></td>
+			<td>Return from a subroutine</td>
+		</tr>
+		</tbody></table><br>
+
+		As previously stated, CHIP-8 was originally implemented on the RCA 
+COSMAC VIP, and it was deemed desirable to include an option to call 
+machine language subroutines from a CHIP-8 program. The following 
+instruction informs the CHIP-8 interpreter to execute a machine language
+ program at a given address, but it should be noted that this 
+instruction is highly considered deprecated, as it often remains 
+unimplemented on modern interpreters. It is included here to provide for
+ a complete CHIP-8 instruction set.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>0NNN</code></td>
+			<td>Execute machine language subroutine at address NNN</td>
+		</tr>
+		</tbody></table><br>
+		
+		On the COSMAC VIP, in order to transfer control back to the CHIP-8 
+program from the machine language subroutine, it was necessary for the 
+machine language subroutine to end with the byte <code>D4</code>. This would signal the completion of the machine language subroutine.<br><br>
+		
+		<h1>Conditional Branching using Skips</h1>
+		One of the most powerful aspects of the modern programming language is
+ the ability to execute different sections of code depending upon if a 
+certain condition is met. This is known as conditional branching, and is
+ accomplished in CHIP-8 by combining two types of instructions: skips 
+and jumps.<br><br>
+
+		Before a conditional branch can be coded, a good understanding of 
+instruction skips is needed. CHIP-8 provides a set of instructions that 
+force the interpreter to check a given condition when executed. If this 
+condition is true, then the instruction following immediately after the 
+skip instruction will <i>not</i> be executed. Instead, the interpreter 
+will resume execution beginning with the instruction immediately after 
+the one which has just been ignored. Thus, a single instruction has been
+ skipped.<br><br>
+
+		The majority of skip commands operate based on the values of given 
+registers, but a select few are driven by user input. These input-based 
+skips will be described in forthcoming sections.<br><br>
+
+		The following table lists all register-based skip commands.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>3XNN</code></td>
+			<td>Skip the following instruction if the value of register VX equals NN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>5XY0</code></td>
+			<td>Skip the following instruction if the value of register VX is equal to the value of register VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>4XNN</code></td>
+			<td>Skip the following instruction if the value of register VX is not equal to NN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>9XY0</code></td>
+			<td>Skip the following instruction if the value of register VX is not equal to the value of register VY</td>
+		</tr>
+		</tbody></table><br>
+
+		In a sense, these skip commands provide a very primitive form of 
+conditional branching: they determine whether a single instruction is 
+executed or not depending upon the value of one or more data registers. 
+Unfortunately, the primary complication with this model is that only a 
+single instruction can be skipped. When the programmer wishes to skip 
+sections of code composed of more than one CHIP-8 instruction, the skip 
+instruction should be followed by one or more jump instructions. These 
+jump instructions will instruct the interpreter where to jump to 
+depending upon what condition is true.<br><br>
+		
+		<h1>Timers</h1>
+		Often the programmer might require the ability to determine when 
+exactly certain events in a program take place. In this case, some sort 
+of timer would prove useful, as the programmer should be able to read 
+the value of the timer and execute code depending upon this value. 
+Luckily, the CHIP-8 language supplies a single delay timer which can be 
+used for such a purpose.<br><br>
+
+		The delay timer acts similarly to a data register: the programmer can 
+load an eight bit value into the delay timer, and read a value back 
+later. The primary difference is that the delay timer perpetually counts
+ down at a rate of sixty hertz until it reaches zero.<br><br>
+
+		Only two instructions exist in the CHIP-8 language to manipulate the 
+delay timer. The first is used to set the delay timer to a given eight 
+bit value. When this value is non-zero, the delay timer will begin 
+counting down until it reaches zero. The second is used to read the 
+current value of the delay timer into a given register. This register 
+can then be used to conditionally branch in the manner introduced in the
+ previous section, allowing certain actions to occur based on the delay 
+timer's value.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX15</code></td>
+			<td>Set the delay timer to the value of register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX07</code></td>
+			<td>Store the current value of the delay timer in register VX</td>
+		</tr>
+		</tbody></table><br>
+
+		CHIP-8 contains another timer, called the sound timer, which is used 
+for sound output. Similar to the delay timer, the sound timer also 
+counts down at a rate of sixty hertz. Contrastingly, when the sound 
+timer is non-zero, a sound frequency will be generated by the speaker 
+(or emulated by a modern interpreter).<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX18</code></td>
+			<td>Set the sound timer to the value of register VX</td>
+		</tr>
+		</tbody></table><br>
+
+		It should be noted that in the COSMAC VIP manual, it was made clear that the minimum value that the timer will respond to is <code>02</code>. Thus, setting the timer to a value of <code>01</code> would have no audible effect.<br><br>
+		
+		<h1>Keypad Input</h1>
+		The CHIP-8 programming language is able to detect input from a sixteen
+ key keypad, with each key corresponding to a single unique hexadecimal 
+digit. Computers like the COSMAC VIP and the ETI-660 actually provided 
+the user with a hex keypad for input, but modern machines often lack 
+such devices. For this reason, CHIP-8 "emulators" often map the key 
+presses of a standard keyboard in order to simulate the key presses of a
+ hex keypad.<br><br>
+
+		CHIP-8 includes three instructions to detect input from the keypad. 
+The simplest instruction halts all program execution until a key on the 
+keypad is pressed, at which point a value corresponding to the key is 
+stored in a given register.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX0A</code></td>
+			<td>Wait for a keypress and store the result in register VX</td>
+		</tr>
+		</tbody></table><br>
+
+		The final two instructions do <i>not</i> halt the interpreter and wait
+ for a keypress. Instead, they skip the succeeding instruction depending
+ upon the state of the key corresponding to a value in a given register.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>EX9E</code></td>
+			<td>Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>EXA1</code></td>
+			<td>Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed</td>
+		</tr>
+		</tbody></table><br>
+		
+		As previously mentioned, these input-based skips can be combined with 
+jumps to achieve a form of input-based conditional branching.<br><br>
+		
+		<h1>Graphics</h1>
+		CHIP-8 allows for the generation of monochrome graphics on a black and white<sup>†</sup>
+ sixty-four by thirty-two pixel screen. By default, the screen is set to
+ all black pixels. The only method of drawing to the screen is using 
+sprites. CHIP-8 sprites are <i>always</i> eight pixels wide and between one to fifteen pixels high.<br><br>
+
+		Sprite data is stored in memory, just like CHIP-8 instructions 
+themselves. One byte corresponds to one row of a given sprite. How many 
+rows (bytes) encompass a sprite is specified through the CHIP-8 
+instructions used to draw the sprites on the screen, and will be covered
+ later. For sprite data, a bit set to one corresponds to a white pixel. 
+Contrastingly, a bit set to zero corresponds to a transparent pixel.<br><br>
+
+		As sprite data is stored in memory just like the actual CHIP-8 program
+ instructions, care should be taken to prevent the interpreter from 
+attempting to execute the sprite data as instructions. For this reason, 
+it is advised to place all sprite data in a section of memory that sits 
+independently of the main program memory. For example, the sprite data 
+could be placed toward the beginning of the program, and preceded by a 
+jump instruction, forcing the interpreter to skip over this data. In 
+another case, sprite data could be placed at the end of the program, and
+ the program could be coded in a way such that the sprite data would 
+never be reached by the interpreter.<br><br>
+		
+		<sup>†</sup>The color of the screen is platform-dependent, but on the VIP, the screen was black and white.<br><br>
+		
+		<h1>The I Register</h1>
+		In order to specify the memory addresses containing the data for a 
+given sprite, there must be some way to store an address for later use. 
+The sixteen data registers (V0 - VF) provided by CHIP-8 are only eight 
+bits in length, and therefore could only store addresses <code>00</code> to <code>FF</code>.
+ Therefore, CHIP-8 provides a special register that is used only to 
+store memory addresses. This register, called the I register, proves 
+useful when performing operations involving reading and writing to and 
+from memory, most importantly, drawing graphics.<br><br>
+
+		The two basic CHIP-8 commands involving the I register allow the I 
+register to be set to a given value, or add a value to the I register.<br><br>
+
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>ANNN</code></td>
+			<td>Store memory address NNN in register I</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX1E</code></td>
+			<td>Add the value stored in register VX to register I</td>
+		</tr>
+		</tbody></table><br>
+		
+		It should be noted that the I register acts very differently from the 
+sixteen data registers of the CHIP-8 language. The data registers are 
+used to manipulate and store data for use in a program, while the I 
+register is used to store a single memory address which <i>cannot</i> be modified using any type of arithmetic instruction. <i>No instructions exist to modify the I register after it is set to a given value.</i><br><br>
+		
+		<h1>Drawing Sprites to the Screen</h1>
+		A single instruction is needed to draw a sprite to the screen.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>DXYN</code></td>
+			<td>Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I<br>Set VF to 01 if any set pixels are changed to unset, and 00 otherwise</td>
+		</tr>
+		</tbody></table><br>
+
+		The two registers passed to this instruction determine the x and y 
+location of the sprite on the screen. If the sprite is to be visible on 
+the screen, the VX register must contain a value between <code>00</code> and <code>3F</code>, and the VY register must contain a value between <code>00</code> and <code>1F</code>.<br><br>
+
+		When this instruction is processed by the interpreter, <code>N</code> 
+bytes of data are read from memory starting from the address stored in 
+register I. These bytes then represent the sprite data that will be used
+ to draw the sprite on the screen. Therefore, the value of the I 
+register determines which sprite is drawn, and should always point to 
+the memory address where the sprite data for the desired graphic is 
+stored. The corresponding graphic on the screen will be eight pixels 
+wide and <code>N</code> pixels high.<br><br>
+		
+		CHIP-8 also includes an instruction that can be used to clear the screen of all sprite data.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>00E0</code></td>
+			<td>Clear the screen</td>
+		</tr>
+		</tbody></table><br>
+		
+		<h1>XOR Mode</h1>
+		All sprites are drawn to the screen using an exclusive-or (XOR) mode; 
+when a request to draw a sprite is processed, the given sprite's data is
+ XOR'd with the current graphics data of the screen. This mode of 
+operation allows for the absence of an instruction to erase a sprite at a
+ given position. Instead, when the programmer wishes to erase a sprite, 
+they simply have to redraw that same sprite on the screen at the same 
+location as before.<br><br>
+
+		The <code>DXYN</code> instruction modifies the VF data register to 
+reflect any state toggles due to XOR mode behavior. If a pixel on the 
+screen is set to <code>01</code>, and the sprite to be drawn contains a <code>01</code> for this same pixel, the screen pixel is turned off and VF is set to <code>01</code>. If the sprite is simply drawn on the screen without drawing over any pixels set to <code>01</code>, VF is set to <code>00</code>.<br><br>
+		
+		<h1>Drawing Fonts</h1>
+		Because many programs often need to output a number to the screen, 
+CHIP-8 contains built-in font utilities to allow for simple output of 
+characters using the <code>DXYN</code> instruction. All hexadecimal digits (<code>0</code> - <code>9</code>, <code>A</code> - <code>F</code>)
+ have corresponding sprite data already stored in the memory of the 
+interpreter. The following table displays these sprites and their 
+corresponding sprite data.<br><br>
+		
+		<table id="ch8fonts">
+		<tbody><tr>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/0.png"></td>
+			<td><code>F0<br>90<br>90<br>90<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/1.png"></td>
+			<td><code>20<br>60<br>20<br>20<br>70</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/2.png"></td>
+			<td><code>F0<br>10<br>F0<br>80<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/3.png"></td>
+			<td><code>F0<br>10<br>F0<br>10<br>F0</code></td>
+		</tr>
+		<tr>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/4.png"></td>
+			<td><code>90<br>90<br>F0<br>10<br>10</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/5.png"></td>
+			<td><code>F0<br>80<br>F0<br>10<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/6.png"></td>
+			<td><code>F0<br>80<br>F0<br>90<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/7.png"></td>
+			<td><code>F0<br>10<br>20<br>40<br>40</code></td>
+		</tr>
+		<tr>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/8.png"></td>
+			<td><code>F0<br>90<br>F0<br>90<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/9.png"></td>
+			<td><code>F0<br>90<br>F0<br>10<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/A.png"></td>
+			<td><code>F0<br>90<br>F0<br>90<br>90</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/B.png"></td>
+			<td><code>E0<br>90<br>E0<br>90<br>E0</code></td>
+		</tr>
+		<tr>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/C.png"></td>
+			<td><code>F0<br>80<br>80<br>80<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/D.png"></td>
+			<td><code>E0<br>90<br>90<br>90<br>E0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/E.png"></td>
+			<td><code>F0<br>80<br>F0<br>80<br>F0</code></td>
+			<td><img src="mattmik%20_%20Mastering%20CHIP-8_files/F.png"></td>
+			<td><code>F0<br>80<br>F0<br>80<br>80</code></td>
+		</tr>
+		</tbody></table><br>
+
+		To set I to the memory address of the sprite data corresponding to one
+ of these characters, a data register containing a single hexadecimal 
+digit must be passed to the following instruction.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX29</code></td>
+			<td>Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX</td>
+		</tr>
+		</tbody></table><br>
+		
+		<h1>Binary-Coded Decimal</h1>
+		In order to make good use of a utility such as the built in font 
+sprite data of the CHIP-8 interpreter, it is often desirable to store 
+the decimal equivalent of a binary or hexadecimal number in memory as 
+individual decimal digits. This is called the binary-coded decimal 
+(BCD), and CHIP-8 contains an instruction to convert any value stored in
+ a data register into its BCD equivalent.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX33</code></td>
+			<td>Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I+1, and I+2</td>
+		</tr>
+		</tbody></table><br>
+
+		When this instruction is executed by the interpreter, the value stored
+ in register VX is converted to its decimal equivalent. Because each 
+register is only eight bits in length, there will be three decimal 
+digits (including any leading zeros). The most significant decimal digit
+ is then stored in at the address found in I, the next in I + 1, and the
+ least significant digit in I + 2. These values might then be used along
+ with the font utility to output a decimal number to the screen.<br><br>
+		
+		<h1>Register Values and Memory Storage</h1>
+		Because CHIP-8 only allows the use of sixteen data registers, it is 
+often desirable to store the current values of the registers in memory 
+for later usage. Register values can be written into memory using the 
+following instruction.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX55</code></td>
+			<td>Store the values of registers V0 to VX inclusive in memory starting at address I<br>I is set to I + X + 1 after operation</td>
+		</tr>
+		</tbody></table><br>
+
+		Just as register values can be stored in memory, the values of memory 
+addresses can be read back into the registers. To accomplish this, the 
+following instruction can be used.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX65</code></td>
+			<td>Fill registers V0 to VX inclusive with the values stored in memory starting at address I<br>I is set to I + X + 1 after operation</td>
+		</tr>
+		</tbody></table><br>
+		
+		Notice that after both of these operations, the value of the I 
+register will be incremented by X + 1. This is due to the changing of 
+addresses by the interpreter.<br><br>
+
+		<h1>Conclusion</h1>
+		Despite its minimalist design, the CHIP-8 language provides the 
+programmer with thirty-five powerful commands with which complexity can 
+be built. Please check back in the future as more is added to this 
+tutorial!<br><br>
+		
+		<h1>Instruction Reference Table</h1>
+		The following is a reference table containing all thirty-five of the 
+original CHIP-8 instructions. NNN refers to a hexadecimal memory 
+address, NN refers to a hexadecimal byte, N refers to a hexadecimal 
+nibble, and X and Y refer to registers.<br><br>
+		
+		<table id="ch8">
+		<tbody><tr>
+			<th>Opcode</th>
+			<th>Description</th>
+		</tr>
+		<tr>
+			<td class="opcode"><code>0NNN</code></td>
+			<td>Execute machine language subroutine at address NNN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>00E0</code></td>
+			<td>Clear the screen</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>00EE</code></td>
+			<td>Return from a subroutine</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>1NNN</code></td>
+			<td>Jump to address NNN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>2NNN</code></td>
+			<td>Execute subroutine starting at address NNN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>3XNN</code></td>
+			<td>Skip the following instruction if the value of register VX equals NN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>4XNN</code></td>
+			<td>Skip the following instruction if the value of register VX is not equal to NN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>5XY0</code></td>
+			<td>Skip the following instruction if the value of register VX is equal to the value of register VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>6XNN</code></td>
+			<td>Store number NN in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>7XNN</code></td>
+			<td>Add the value NN to register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY0</code></td>
+			<td>Store the value of register VY in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY1</code></td>
+			<td>Set VX to VX OR VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY2</code></td>
+			<td>Set VX to VX AND VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY3</code></td>
+			<td>Set VX to VX XOR VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY4</code></td>
+			<td>Add the value of register VY to register VX<br>Set VF to 01 if a carry occurs<br>Set VF to 00 if a carry does not occur</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY5</code></td>
+			<td>Subtract the value of register VY from register VX<br>Set VF to 00 if a borrow occurs<br>Set VF to 01 if a borrow does not occur</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY6</code></td>
+			<td>Store the value of register VY shifted right one bit in register VX<br>Set register VF to the least significant bit prior to the shift</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XY7</code></td>
+			<td>Set register VX to the value of VY minus VX<br>Set VF to 00 if a borrow occurs<br>Set VF to 01 if a borrow does not occur</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>8XYE</code></td>
+			<td>Store the value of register VY shifted left one bit in register VX<br>Set register VF to the most significant bit prior to the shift</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>9XY0</code></td>
+			<td>Skip the following instruction if the value of register VX is not equal to the value of register VY</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>ANNN</code></td>
+			<td>Store memory address NNN in register I</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>BNNN</code></td>
+			<td>Jump to address NNN + V0</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>CXNN</code></td>
+			<td>Set VX to a random number with a mask of NN</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>DXYN</code></td>
+			<td>Draw a sprite at position VX, VY with N bytes of sprite data starting at the address stored in I<br>Set VF to 01 if any set pixels are changed to unset, and 00 otherwise</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>EX9E</code></td>
+			<td>Skip the following instruction if the key corresponding to the hex value currently stored in register VX is pressed</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>EXA1</code></td>
+			<td>Skip the following instruction if the key corresponding to the hex value currently stored in register VX is not pressed</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX07</code></td>
+			<td>Store the current value of the delay timer in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX0A</code></td>
+			<td>Wait for a keypress and store the result in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX15</code></td>
+			<td>Set the delay timer to the value of register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX18</code></td>
+			<td>Set the sound timer to the value of register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX1E</code></td>
+			<td>Add the value stored in register VX to register I</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX29</code></td>
+			<td>Set I to the memory address of the sprite data corresponding to the hexadecimal digit stored in register VX</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX33</code></td>
+			<td>Store the binary-coded decimal equivalent of the value stored in register VX at addresses I, I+1, and I+2</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX55</code></td>
+			<td>Store the values of registers V0 to VX inclusive in memory starting at address I<br>I is set to I + X + 1 after operation</td>
+		</tr>
+		<tr>
+			<td class="opcode"><code>FX65</code></td>
+			<td>Fill registers V0 to VX inclusive with the values stored in memory starting at address I<br>I is set to I + X + 1 after operation</td>
+		</tr>
+		</tbody></table><br>
+		
+		<br>
+		
+		</td>
+	</tr>
+
+</tbody></table>
+
+<center>
+<table>
+
+
+</table>
+</center>
+
+
+
+
+</body></html>
