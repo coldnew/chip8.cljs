@@ -7,9 +7,9 @@
   :source-paths ["src/clj"]
   :test-paths ["spec"]
 
-  :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.145"]
-                 [org.clojure/core.async "0.1.346.0-17112a-alpha"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojurescript "1.7.228"]
+                 [org.clojure/core.async "0.2.374"]
                  [org.clojure/core.match "0.3.0-alpha4"]
                  [ring "1.4.0"]
                  [com.akolov.enlive-reload "0.2.1"]
@@ -18,12 +18,12 @@
                  [bk/ring-gzip "0.1.1"]
                  [compojure "1.4.0"]
                  [enlive "1.1.6"]
-                 [environ "1.0.1"]]
+                 [environ "1.0.2"]]
 
-  :plugins [[lein-cljsbuild "1.1.0"]
-            [lein-environ "1.0.1"]
+  :plugins [[lein-cljsbuild "1.1.2"]
+            [lein-environ "1.0.2"]
             [speclj "3.3.1"]
-            [lein-figwheel "0.4.1" :exclusions [org.clojure/core.cache]]]
+            [lein-figwheel "0.5.0-6" :exclusions [org.clojure/core.cache]]]
 
   :cljsbuild {:builds
               {:app {:source-paths ["src/cljs"]
@@ -37,17 +37,17 @@
   :profiles {:dev {:source-paths ["env/dev"]
                    :test-paths ["test/clj"]
 
-                   :dependencies [[figwheel "0.4.1"]
-                                  [figwheel-sidecar "0.4.1"]
+                   :dependencies [[figwheel "0.5.0-6"]
+                                  [figwheel-sidecar "0.5.0-6"]
                                   [com.cemerick/piggieback "0.2.1"]
-                                  [org.clojure/tools.nrepl "0.2.11"]
+                                  [org.clojure/tools.nrepl "0.2.12"]
                                   [weasel "0.7.0"]
                                   [speclj "3.3.1"]]
 
                    :repl-options {:init-ns chip8.server
                                   :nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}
 
-                   :plugins [[lein-figwheel "0.4.1"]]
+                   :plugins [[lein-figwheel "0.5.0-6"]]
 
                    :figwheel {:http-server-root "public"
                               :server-port 3449
@@ -64,9 +64,9 @@
                                                           :optimizations :simple
                                                           :pretty-print  true}}
                                         }}}
-             ;; :prod {:cljsbuild {:builds {:app
-             ;;                             {:source-paths ["env/prod"]
-             ;;                              :compiler {:optimizations :advanced :pretty-print false}}}}}
+             :prod {:cljsbuild {:builds {:app
+                                          {:source-paths ["env/prod"]
+                                           :compiler {:optimizations :advanced :pretty-print false}}}}}
              }
 
   :min-lein-version "2.5.1"
