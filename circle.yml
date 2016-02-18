@@ -10,8 +10,6 @@ machine:
 
 dependencies:
   pre:
-    - npm install -g bower
-    - bower install
     - sudo apt-get update; sudo apt-get install libicu52
     - curl --output /home/ubuntu/bin/phantomjs-2.0.1-linux-x86_64-dynamic https://s3.amazonaws.com/circle-support-bucket/phantomjs/phantomjs-2.0.1-linux-x86_64-dynamic
     - chmod a+x /home/ubuntu/bin/phantomjs-2.0.1-linux-x86_64-dynamic
