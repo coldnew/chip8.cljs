@@ -1,6 +1,6 @@
 (defproject emulator-chip8 "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "CHIP-8 emulator written in clojurescript."
+  :url "https://github.com/coldnew/chip8.cljs"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
 
