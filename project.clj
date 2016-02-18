@@ -1,8 +1,9 @@
 (defproject emulator-chip8 "0.1.0-SNAPSHOT"
   :description "CHIP-8 emulator written in clojurescript."
+  :author "Yen-Chin, Lee"
   :url "https://github.com/coldnew/chip8.cljs"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :license {:name "MIT License"
+            :url "https://github.com/coldnew/chip8.cljs/blob/master/LICENSE"}
 
   :source-paths ["src/clj"]
   :test-paths ["spec"]
@@ -65,8 +66,8 @@
                                                           :pretty-print  true}}
                                         }}}
              :prod {:cljsbuild {:builds {:app
-                                          {:source-paths ["env/prod"]
-                                           :compiler {:optimizations :advanced :pretty-print false}}}}}
+                                         {:source-paths ["env/prod"]
+                                          :compiler {:optimizations :advanced :pretty-print false}}}}}
              }
 
   :min-lein-version "2.5.1"
