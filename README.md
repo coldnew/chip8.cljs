@@ -1,4 +1,6 @@
 # chip8.cljs
+[![Dependencies Status](https://jarkeeper.com/coldnew/chip8.cljs/status.svg)](https://jarkeeper.com/coldnew/chip8.cljs)
+
 
 CHIP-8 emulator written in clojurescript.
 
