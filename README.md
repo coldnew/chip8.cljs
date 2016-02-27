@@ -1,5 +1,5 @@
 # chip8.cljs
-[![Circle CI](https://circleci.com/gh/coldnew/chip8.cljs/tree/master.svg?style=svg)](https://circleci.com/gh/coldnew/chip8.cjs/tree/master)
+[![Circle CI](https://circleci.com/gh/coldnew/chip8.cljs.svg?style=svg)](https://circleci.com/gh/coldnew/chip8.cljs)
 [![Dependencies Status](https://jarkeeper.com/coldnew/chip8.cljs/status.svg)](https://jarkeeper.com/coldnew/chip8.cljs)
 [![GitHub license](https://img.shields.io/badge/license-MIT-blue.svg)](https://raw.githubusercontent.com/coldnew/chip8.cljs/master/LICENSE)
 
